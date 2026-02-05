@@ -19,9 +19,9 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-    ci-gate:
-      needs: [test-sonarqube]
-      runs-on: ubuntu-latest
-      steps:
-        - name: CI Gate
-          run: echo "CI bem sucedida"
+  ci-gate:
+    needs: [test-sonarqube]
+    runs-on: ubuntu-latest
+    steps:
+      - name: CI Gate
+        run: echo "CI bem sucedida"
