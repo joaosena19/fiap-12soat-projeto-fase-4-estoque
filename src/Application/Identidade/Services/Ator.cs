@@ -1,6 +1,12 @@
-using Domain.Identidade.Enums;
-
 namespace Application.Identidade.Services;
+
+// Enum replicado localmente para evitar dependência do Domain.Identidade
+public enum RoleEnum
+{
+    Administrador = 1,
+    Cliente = 2,
+    Sistema = 3
+}
 
 public class Ator
 {

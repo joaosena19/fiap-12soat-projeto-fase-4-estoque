@@ -1,7 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Application.Identidade.Services;
-using Domain.Identidade.Enums;
 using Shared.Exceptions;
 using Shared.Enums;
 

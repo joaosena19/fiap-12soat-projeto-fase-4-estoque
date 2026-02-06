@@ -179,7 +179,6 @@ C:\Repositorios\fiap-12soat-projeto-fase-4-estoque\src\OficinaMecanica\obj\Debug
 C:\Repositorios\fiap-12soat-projeto-fase-4-estoque\src\OficinaMecanica\obj\Debug\net9.0\staticwebassets.build.json.cache
 C:\Repositorios\fiap-12soat-projeto-fase-4-estoque\src\OficinaMecanica\obj\Debug\net9.0\staticwebassets.development.json
 C:\Repositorios\fiap-12soat-projeto-fase-4-estoque\src\OficinaMecanica\obj\Debug\net9.0\staticwebassets.build.endpoints.json
-C:\Repositorios\fiap-12soat-projeto-fase-4-estoque\src\OficinaMecanica\obj\Debug\net9.0\swae.build.ex.cache
 C:\Repositorios\fiap-12soat-projeto-fase-4-estoque\src\OficinaMecanica\obj\Debug\net9.0\API.csproj.Up2Date
 C:\Repositorios\fiap-12soat-projeto-fase-4-estoque\src\OficinaMecanica\obj\Debug\net9.0\API.dll
 C:\Repositorios\fiap-12soat-projeto-fase-4-estoque\src\OficinaMecanica\obj\Debug\net9.0\refint\API.dll
