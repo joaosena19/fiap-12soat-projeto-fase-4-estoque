@@ -5,23 +5,55 @@ on:
     branches: [ "main" ]
 
 jobs:
-  test-sonarqube:
+  build-and-test:
     runs-on: ubuntu-latest
-    
+
+    permissions:
+      checks: write
+
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
+
+      - name: Configurar .NET 9.0
+        uses: actions/setup-dotnet@v4
         with:
-          fetch-depth: 0
+          dotnet-version: '9.0.x'
 
-      - name: Análise SonarQube
-        uses: SonarSource/sonarqube-scan-action@v5
+      - name: Encontrar arquivo da Solution (.sln)
+        id: find_sln
+        run: echo "sln_path=$(find . -name '*.sln' -print -quit)" >> $GITHUB_OUTPUT
+        
+      - name: Restaurar dependências
+        run: dotnet restore ${{ steps.find_sln.outputs.sln_path }}
+
+      - name: Buildar a aplicação (Release)
+        run: dotnet build ${{ steps.find_sln.outputs.sln_path }} --no-restore --configuration Release
+
+      - name: Rodar testes unitários (Release)
+        run: dotnet test ${{ steps.find_sln.outputs.sln_path }} --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        # Permite que o workflow continue mesmo se os testes falharem, para que o relatório possa ser gerado.
+        continue-on-error: true
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          DatabaseConnection__Host: "localhost"
+          DatabaseConnection__Port: "5432"
+          DatabaseConnection__DatabaseName: "db_test"
+          DatabaseConnection__User: "test_user"
+          DatabaseConnection__Password: "test_password"
+          Jwt__Key: "dummy-super-secret-key-for-testing-purposes-only"
+          Jwt__Issuer: "OficinaMecanicaApi"
+          Jwt__Audience: "AuthorizedServices"
+          ApiCredentials__ClientId: "test-client"
+          ApiCredentials__ClientSecret: "test-secret"
+          Webhook__HmacSecret: "test-hmac-secret"
 
-  ci-gate:
-    needs: [test-sonarqube]
-    runs-on: ubuntu-latest
-    steps:
-      - name: CI Gate
-        run: echo "CI bem sucedida"
+      - name: Publicar relatório de testes
+        uses: dorny/test-reporter@v1
+        # Garante que este passo sempre rode, para que possamos ver o relatório mesmo em caso de falha
+        if: always()
+        with:
+          name: test-report
+          path: "**/test-results.trx"
+          reporter: dotnet-trx
+          # Falha o job se algum teste tiver falhado, garantindo que o PR seja bloqueado
+          fail-on-error: true

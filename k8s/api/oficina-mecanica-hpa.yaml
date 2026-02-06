@@ -1,0 +1,18 @@
+apiVersion: autoscaling/v2 #v2 para suportar múltiplas métricas
+kind: HorizontalPodAutoscaler
+metadata:
+  name: oficina-mecanica-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: oficina-mecanica-deployment
+  minReplicas: 1 # Mesmo valor do Deployment
+  maxReplicas: 5 
+  metrics: # Escala baseado em CPU
+  - type: Resource 
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70

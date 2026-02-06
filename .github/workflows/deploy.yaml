@@ -1,0 +1,207 @@
+name: Deploy Aplicação no EKS
+
+on:
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  build-and-test:
+    name: 1. Build e Teste
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar .NET 9.0
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+          
+      - name: Encontrar arquivo da Solution (.sln)
+        id: find_sln
+        run: echo "sln_path=$(find . -name '*.sln' -print -quit)" >> $GITHUB_OUTPUT
+        
+      - name: Restaurar dependências
+        run: dotnet restore ${{ steps.find_sln.outputs.sln_path }}
+
+      - name: Buildar a aplicação (Release)
+        run: dotnet build ${{ steps.find_sln.outputs.sln_path }} --no-restore --configuration Release
+
+      - name: Rodar testes unitários (Release)
+        run: dotnet test ${{ steps.find_sln.outputs.sln_path }} --no-build --configuration Release --verbosity normal
+        env:
+          DatabaseConnection__Host: "localhost"
+          DatabaseConnection__Port: "5432"
+          DatabaseConnection__DatabaseName: "db_test"
+          DatabaseConnection__User: "test_user"
+          DatabaseConnection__Password: "test_password"
+          Jwt__Key: "dummy-super-secret-key-for-testing-purposes-only"
+          Jwt__Issuer: "OficinaMecanicaApi"
+          Jwt__Audience: "AuthorizedServices"
+          ApiCredentials__ClientId: "test-client"
+          ApiCredentials__ClientSecret: "test-secret"
+          Webhook__HmacSecret: "test-hmac-secret"
+
+  publish-docker-image:
+    name: 2. Publicar Imagem Docker
+    runs-on: ubuntu-latest
+    needs: build-and-test # Executa após o build e testes
+    outputs:
+      version_tag: ${{ steps.version.outputs.VERSION }}
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Gerar tag de versão
+        id: version
+        run: |
+          echo "VERSION=v$(date +%Y%m%d-%H%M%S)-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+
+      - name: Login no Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Buildar e enviar imagem Docker
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src
+          file: ./src/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/fiap-12soat-projeto-fase3:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/fiap-12soat-projeto-fase3:${{ steps.version.outputs.VERSION }}
+
+  deploy-to-kubernetes:
+    name: 3. Deploy no Kubernetes (EKS)
+    runs-on: ubuntu-latest
+    needs: publish-docker-image # Depende da imagem Docker publicada
+    # Executa apenas se o job anterior foi bem-sucedido
+    if: ${{ needs.publish-docker-image.result == 'success' }}
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+        
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verificar conectividade com AWS
+        run: |
+          echo "Verificando identidade AWS..."
+          aws sts get-caller-identity
+          echo "Listando clusters EKS..."
+          aws eks list-clusters --region ${{ env.AWS_REGION }}
+
+      - name: Instalar dependências
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Configurar Terraform (para buscar dados PostgreSQL)
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+          terraform_wrapper: false
+
+      - name: Buscar dados do PostgreSQL via Terraform
+        run: |
+          # Buscar dados do PostgreSQL diretamente do S3 backend (read-only)
+          
+          # Configurar AWS CLI para acessar o state
+          export AWS_REGION="${{ env.AWS_REGION }}"
+          
+          # Buscar outputs diretamente do state via AWS CLI
+          STATE_DATA=$(aws s3 cp s3://${{ secrets.TF_VAR_BUCKET_NAME }}/database-postgres/terraform.tfstate -)
+          
+          # Extrair valores usando jq
+          export DB_HOST_VALUE=$(echo "$STATE_DATA" | jq -r '.outputs.postgres_instance_endpoint.value')
+          export DB_NAME_VALUE=$(echo "$STATE_DATA" | jq -r '.outputs.postgres_database_name.value') 
+          export DB_USERNAME_VALUE=$(echo "$STATE_DATA" | jq -r '.outputs.postgres_master_username.value')
+          
+          # Validar se os valores foram obtidos
+          if [ "$DB_HOST_VALUE" = "null" ] || [ -z "$DB_HOST_VALUE" ]; then
+            echo "❌ Erro: Não foi possível obter DB_HOST_VALUE do state"
+            exit 1
+          fi
+          
+          echo "✅ Dados do PostgreSQL obtidos com sucesso:"
+          echo "Host: $DB_HOST_VALUE"
+          echo "Database: $DB_NAME_VALUE" 
+          echo "User: $DB_USERNAME_VALUE"
+          echo "Password: [Será obtida do GitHub Secret]"
+          
+          # Exportar para próximos steps
+          echo "DB_HOST_VALUE=$DB_HOST_VALUE" >> $GITHUB_ENV
+          echo "DB_NAME_VALUE=$DB_NAME_VALUE" >> $GITHUB_ENV
+          echo "DB_USERNAME_VALUE=$DB_USERNAME_VALUE" >> $GITHUB_ENV
+
+      - name: Configurar acesso ao cluster EKS
+        run: |
+          echo "Configurando kubeconfig para o cluster: ${{ secrets.TF_VAR_EKS_CLUSTER_NAME }}"
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ secrets.TF_VAR_EKS_CLUSTER_NAME }}
+          echo "Testando conectividade com o cluster..."
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Atualizar secrets do Kubernetes
+        run: |
+          # Atualizar oficina-mecanica-secret com valores das secrets
+          kubectl create secret generic oficina-mecanica-secret \
+            --from-literal=DatabaseConnection__Password=${{ secrets.DB_MASTER_PASSWORD }} \
+            --from-literal=Jwt__Key=${{ secrets.JWT_KEY }} \
+            --from-literal=ApiCredentials__ClientSecret=${{ secrets.API_CLIENT_SECRET }} \
+            --from-literal=Webhook__HmacSecret=${{ secrets.WEBHOOK_HMAC_SECRET }} \
+            --from-literal=NEW_RELIC_LICENSE_KEY=${{ secrets.NEW_RELIC_LICENSE_KEY }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Atualizar ConfigMap do Kubernetes
+        run: |
+          # Atualizar oficina-mecanica-config com dados AUTOMÁTICOS do PostgreSQL
+          kubectl create configmap oficina-mecanica-config \
+            --from-literal=DatabaseConnection__Host="$DB_HOST_VALUE" \
+            --from-literal=DatabaseConnection__Port=5432 \
+            --from-literal=DatabaseConnection__DatabaseName="$DB_NAME_VALUE" \
+            --from-literal=DatabaseConnection__User="$DB_USERNAME_VALUE" \
+            --from-literal=ASPNETCORE_ENVIRONMENT=Production \
+            --from-literal=ASPNETCORE_URLS=http://+:8080 \
+            --from-literal=Jwt__Issuer=${{ secrets.JWT_ISSUER }} \
+            --from-literal=Jwt__Audience=${{ secrets.JWT_AUDIENCE }} \
+            --from-literal=ApiCredentials__ClientId=${{ secrets.API_CLIENT_ID }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Atualizar tag da imagem no manifesto k8s
+        run: |
+          sed -i "s|image:.*|image: ${{ secrets.DOCKERHUB_USERNAME }}/fiap-12soat-projeto-fase3:${{ needs.publish-docker-image.outputs.version_tag }}|g" k8s/api/oficina-mecanica-deployment.yaml
+
+      - name: Aplicar metrics server
+        run: kubectl apply -f k8s/metrics-server.yaml
+        continue-on-error: true
+
+      - name: Aplicar manifestos da API
+        run: kubectl apply -f k8s/api/
+
+      - name: Aguardar e verificar pods
+        run: |
+          echo "Aguardando pods serem criados..."
+          sleep 30
+          echo "Status dos pods:"
+          kubectl get pods -o wide
+          echo "Eventos recentes:"
+          kubectl get events --sort-by=.metadata.creationTimestamp | tail -20
+        
+      - name: Verificar o status do deploy
+        run: kubectl rollout status deployment/oficina-mecanica-deployment --timeout=300s
+
+      - name: Exibir informações do serviço
+        run: |
+          echo "Informações do serviço:"
+          kubectl get service oficina-mecanica-service
+          echo "Endpoints:"
+          kubectl get endpoints oficina-mecanica-service

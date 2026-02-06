@@ -1,0 +1,84 @@
+name: Destruir Aplicação do EKS
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Digite "destroy" para confirmar a remoção da aplicação do EKS'
+        required: true
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  destroy:
+    name: Remover Aplicação do EKS
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Validar confirmação
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "destroy" ]; then
+            echo "Confirmação falhou. Você deve digitar 'destroy' para prosseguir."
+            exit 1
+          fi
+
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Configurar acesso ao cluster EKS
+        run: |
+          echo "Configurando kubeconfig para o cluster: ${{ secrets.TF_VAR_EKS_CLUSTER_NAME }}"
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ secrets.TF_VAR_EKS_CLUSTER_NAME }}
+          kubectl cluster-info
+
+      - name: Listar recursos antes da remoção
+        run: |
+          echo "Deployments:"
+          kubectl get deployments
+          echo "Services:"
+          kubectl get services
+          echo "ConfigMaps:"
+          kubectl get configmaps
+          echo "Secrets:"
+          kubectl get secrets
+
+      - name: Remover deployment da API
+        run: kubectl delete -f k8s/api/ --ignore-not-found=true
+        continue-on-error: true
+
+      - name: Remover metrics server
+        run: kubectl delete -f k8s/metrics-server.yaml --ignore-not-found=true
+        continue-on-error: true
+
+      - name: Aguardar finalização da remoção
+        run: |
+          echo "Aguardando finalização da remoção dos pods..."
+          sleep 30
+          echo "Pods restantes:"
+          kubectl get pods
+
+      - name: Verificar recursos restantes
+        run: |
+          echo "Verificando se todos os recursos foram removidos..."
+          if kubectl get deployment oficina-mecanica-deployment 2>/dev/null; then
+            echo "⚠️ Deployment ainda existe"
+          else
+            echo "✅ Deployment removido com sucesso"
+          fi
+          
+          if kubectl get service oficina-mecanica-service 2>/dev/null; then
+            echo "⚠️ Service ainda existe"
+          else
+            echo "✅ Service removido com sucesso"
+          fi
+
+      - name: Destruição completa
+        run: echo "Aplicação removida do EKS com sucesso"

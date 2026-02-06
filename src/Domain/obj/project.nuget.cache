@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "D4//zelgIV0=",
+  "success": true,
+  "projectFilePath": "C:\\Repositorios\\fiap-12soat-projeto-fase-4-estoque\\src\\Domain\\Domain.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\joaod\\.nuget\\packages\\uuidnext\\4.1.2\\uuidnext.4.1.2.nupkg.sha512"
+  ],
+  "logs": []
+}

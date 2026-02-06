@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oficina-mecanica-deployment
+spec:
+  replicas: 1 # Iniciará com 1 Pod. Para alta-disponibilidade usaríamos mais, mas como é um projeto acadêmico, 1 já é suficiente.
+  selector:
+    matchLabels:
+      app: oficina-mecanica-pod
+  template:
+    metadata:
+      labels:
+        app: oficina-mecanica-pod
+    spec:
+      containers:
+      - name: container-oficina-mecanica-api
+        image: joaodainese/fiap-12soat-projeto-fase3:latest # Imagem do Docker Hub
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080 # Port exposta no Dockerfile
+          name: http
+        envFrom:
+          - configMapRef:
+              name: oficina-mecanica-config
+          - secretRef:
+              name: oficina-mecanica-secret
+        resources: # Valores ajustados para suportar o agente New Relic e evitar OOM
+          requests:
+            cpu: "50m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        # Health Probes para monitoramento da aplicação .NET
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 15
+          timeoutSeconds: 10
+          failureThreshold: 5
+        startupProbe:
+          httpGet:
+            path: /health/startup
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 15
+          timeoutSeconds: 10
+          failureThreshold: 20

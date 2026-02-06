@@ -1,0 +1,7 @@
+{
+  "API, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Repositorios\\fiap-12soat-projeto-fase-4-estoque\\src\\OficinaMecanica",
+  "Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Repositorios\\fiap-12soat-projeto-fase-4-estoque\\src\\Application",
+  "Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Repositorios\\fiap-12soat-projeto-fase-4-estoque\\src\\Domain",
+  "Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Repositorios\\fiap-12soat-projeto-fase-4-estoque\\src\\Infrastructure",
+  "Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "C:\\Repositorios\\fiap-12soat-projeto-fase-4-estoque\\src\\Shared"
+}

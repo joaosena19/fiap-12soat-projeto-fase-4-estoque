@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: oficina-mecanica-service
+  namespace: default
+spec:
+  # NodePort para integração com NLB via API Gateway
+  type: NodePort
+  selector:
+    app: oficina-mecanica-pod
+  ports:
+  - name: oficina-mecanica-service
+    protocol: TCP
+    port: 80 # Porta interna do Service
+    targetPort: 8080 # Porta onde o Pod está escutando
+    nodePort: 30080 # Porta exposta nos nodes do EKS (usada pelo NLB)
