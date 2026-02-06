@@ -5200,7 +5200,7 @@
     "version": "1.0.0",
     "restore": {
       "projectUniqueName": "C:\\Repositorios\\fiap-12soat-projeto-fase-4-estoque\\src\\OficinaMecanica\\API.csproj",
-      "projectName": "API",
+      "projectName": "EstoqueService.API",
       "projectPath": "C:\\Repositorios\\fiap-12soat-projeto-fase-4-estoque\\src\\OficinaMecanica\\API.csproj",
       "packagesPath": "C:\\Users\\joaod\\.nuget\\packages\\",
       "outputPath": "C:\\Repositorios\\fiap-12soat-projeto-fase-4-estoque\\src\\OficinaMecanica\\obj\\",

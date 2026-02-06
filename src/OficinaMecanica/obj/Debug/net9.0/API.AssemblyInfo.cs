@@ -11,12 +11,12 @@ using System;
 using System.Reflection;
 
 [assembly: Microsoft.Extensions.Configuration.UserSecrets.UserSecretsIdAttribute("fa3b4b7c-f620-47e1-b1bf-aabac0fffb95")]
-[assembly: System.Reflection.AssemblyCompanyAttribute("API")]
+[assembly: System.Reflection.AssemblyCompanyAttribute("EstoqueService.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2fdc79c094d3ec4db6c047cb9b7ffcd9c9e1d357")]
-[assembly: System.Reflection.AssemblyProductAttribute("API")]
-[assembly: System.Reflection.AssemblyTitleAttribute("API")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+11f5f8bab5dfe7e5c2f33e19e15eb4e89d4f21f0")]
+[assembly: System.Reflection.AssemblyProductAttribute("EstoqueService.API")]
+[assembly: System.Reflection.AssemblyTitleAttribute("EstoqueService.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
 
 // Gerado pela classe WriteCodeFragment do MSBuild.
