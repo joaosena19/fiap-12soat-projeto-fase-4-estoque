@@ -1,6 +1,6 @@
 services:
-  minha-api:
-    container_name: oficina_api_service
+  estoque-service:
+    container_name: estoque_service
     build:
       context: .
       dockerfile: ./Dockerfile

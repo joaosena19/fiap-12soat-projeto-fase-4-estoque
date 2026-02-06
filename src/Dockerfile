@@ -44,4 +44,4 @@ ENV CORECLR_ENABLE_PROFILING=1 \
 # Copia a aplicação
 COPY --from=build /app/publish .
 
-ENTRYPOINT ["dotnet", "API.dll"]
+ENTRYPOINT ["dotnet", "EstoqueService.API.dll"]
