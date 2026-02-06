@@ -58,8 +58,8 @@ nunit-*.xml
 *.csproj.user
 CoverageReport/
 .vs/
-bin/
-obj/
+**/bin/
+**/obj/
 
 # Visual Studio temporary files
 **/FileContentIndex/

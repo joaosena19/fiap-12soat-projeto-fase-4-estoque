@@ -64,7 +64,8 @@ namespace Tests.Application
                 "O método ApresentarErro não deveria ter sido chamado.");
         }
 
-        // Overrides para IOperacaoOrdemServicoPresenter (não tem objeto, apenas presenter)
+        // COMENTADO - Overrides para IOperacaoOrdemServicoPresenter (não pertence ao bounded context de Estoque)
+        /*
         public static void DeveTerApresentadoSucesso(this Mock<IOperacaoOrdemServicoPresenter> mock)
         {
             mock.Verify(p => p.ApresentarSucesso(), Times.Once,
@@ -100,6 +101,7 @@ namespace Tests.Application
             mock.Verify(p => p.ApresentarErro(It.IsAny<string>(), It.IsAny<ErrorType>()), Times.Never,
                 "O método ApresentarErro não deveria ter sido chamado.");
         }
+        */
 
         // Helpers de normalização/comparação para mensagens
         private static bool ContemTextoNormalizado(string textoCompleto, string textoProcurado)
