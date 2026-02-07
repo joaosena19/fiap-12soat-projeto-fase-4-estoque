@@ -1,37 +1,36 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: oficina-mecanica-deployment
+  name: estoque-service
 spec:
-  replicas: 1 # Iniciará com 1 Pod. Para alta-disponibilidade usaríamos mais, mas como é um projeto acadêmico, 1 já é suficiente.
+  replicas: 1
   selector:
     matchLabels:
-      app: oficina-mecanica-pod
+      app: estoque-service
   template:
     metadata:
       labels:
-        app: oficina-mecanica-pod
+        app: estoque-service
     spec:
       containers:
-      - name: container-oficina-mecanica-api
-        image: joaodainese/fiap-12soat-projeto-fase3:latest # Imagem do Docker Hub
+      - name: estoque-service
+        image: joaodainese/estoque-service:latest
         imagePullPolicy: Always
         ports:
-        - containerPort: 8080 # Port exposta no Dockerfile
+        - containerPort: 8080
           name: http
         envFrom:
           - configMapRef:
-              name: oficina-mecanica-config
+              name: estoque-config
           - secretRef:
-              name: oficina-mecanica-secret
-        resources: # Valores ajustados para suportar o agente New Relic e evitar OOM
+              name: estoque-secret
+        resources:
           requests:
             cpu: "50m"
             memory: "256Mi"
           limits:
             cpu: "500m"
             memory: "512Mi"
-        # Health Probes para monitoramento da aplicação .NET
         livenessProbe:
           httpGet:
             path: /health/live

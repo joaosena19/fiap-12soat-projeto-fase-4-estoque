@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: oficina-mecanica-config
-data: # Dados não sensíveis
+  name: estoque-config
+data:
   DatabaseConnection__Host: "__DB_HOST__"
   DatabaseConnection__Port: "5432"
   DatabaseConnection__DatabaseName: "__DB_NAME__"
@@ -16,7 +16,7 @@ data: # Dados não sensíveis
   
   ApiCredentials__ClientId: "admin"
 
-  NEW_RELIC_APP_NAME: "Fiap.Fase3.Oficina.API"
+  NEW_RELIC_APP_NAME: "EstoqueService"
   NEW_RELIC_APPLICATION_LOGGING_ENABLED: "true"
   NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED: "true"
   NEW_RELIC_APPLICATION_LOGGING_CONTEXT_DATA_ENABLED: "true"
@@ -24,7 +24,6 @@ data: # Dados não sensíveis
   NEW_RELIC_DISTRIBUTED_TRACING_ENABLED: "true"
   NEW_RELIC_LOG_LEVEL: "info"
   
-  # Variáveis obrigatórias do New Relic Profiler
   CORECLR_ENABLE_PROFILING: "1"
   CORECLR_PROFILER: "{36032161-FFC0-4B61-B559-F6C5D41BAE5A}"
   CORECLR_PROFILER_PATH: "/app/newrelic/libNewRelicProfiler.so" 
