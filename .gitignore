@@ -82,3 +82,11 @@ Thumbs.db
 
 # Rider
 .idea/
+
+# Terraform
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform.tfstate.lock.info
