@@ -4,7 +4,7 @@ metadata:
   name: estoque-service
   namespace: default
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: estoque-service
   ports:
@@ -12,3 +12,4 @@ spec:
     protocol: TCP
     port: 80
     targetPort: 8080
+    nodePort: 30082
