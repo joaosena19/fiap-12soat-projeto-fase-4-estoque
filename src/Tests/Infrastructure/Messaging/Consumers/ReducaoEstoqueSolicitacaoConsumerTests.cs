@@ -59,7 +59,6 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         {
             CorrelationId = correlationId,
             OrdemServicoId = ordemServicoId,
-            StatusAnterior = "AguardandoAprovacao",
             Itens = new List<ItemReducao>
             {
                 new ItemReducao { ItemEstoqueId = itemEstoque.Id, Quantidade = 5 }
@@ -106,7 +105,6 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         {
             CorrelationId = correlationId,
             OrdemServicoId = ordemServicoId,
-            StatusAnterior = "AguardandoAprovacao",
             Itens = new List<ItemReducao>
             {
                 new ItemReducao { ItemEstoqueId = itemEstoque.Id, Quantidade = 10 }
@@ -148,7 +146,6 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         {
             CorrelationId = correlationId,
             OrdemServicoId = ordemServicoId,
-            StatusAnterior = "AguardandoAprovacao",
             Itens = new List<ItemReducao>
             {
                 new ItemReducao { ItemEstoqueId = itemIdInexistente, Quantidade = 5 }
@@ -188,7 +185,6 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         {
             CorrelationId = correlationId,
             OrdemServicoId = ordemServicoId,
-            StatusAnterior = "AguardandoAprovacao",
             Itens = new List<ItemReducao>
             {
                 new ItemReducao { ItemEstoqueId = itemId, Quantidade = 5 }
@@ -230,7 +226,6 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         {
             CorrelationId = correlationId,
             OrdemServicoId = ordemServicoId,
-            StatusAnterior = "AguardandoAprovacao",
             Itens = new List<ItemReducao>
             {
                 new ItemReducao { ItemEstoqueId = itemEstoque1.Id, Quantidade = 4 },
@@ -283,7 +278,6 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         {
             CorrelationId = correlationId,
             OrdemServicoId = ordemServicoId,
-            StatusAnterior = "AguardandoAprovacao",
             Itens = new List<ItemReducao>
             {
                 new ItemReducao { ItemEstoqueId = itemEstoque1.Id, Quantidade = 4 },
@@ -329,7 +323,6 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         {
             CorrelationId = correlationId,
             OrdemServicoId = ordemServicoId,
-            StatusAnterior = "AguardandoAprovacao",
             Itens = new List<ItemReducao>
             {
                 new ItemReducao { ItemEstoqueId = itemEstoque.Id, Quantidade = 5 }

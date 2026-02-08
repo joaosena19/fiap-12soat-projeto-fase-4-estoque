@@ -19,7 +19,6 @@ public class ReducaoEstoqueContractsTests
         {
             CorrelationId = Guid.NewGuid(),
             OrdemServicoId = Guid.NewGuid(),
-            StatusAnterior = "AguardandoAprovacao",
             Itens = new List<ItemReducao>
             {
                 new ItemReducao { ItemEstoqueId = Guid.NewGuid(), Quantidade = 5 },
@@ -35,7 +34,6 @@ public class ReducaoEstoqueContractsTests
         Assert.NotNull(deserialized);
         Assert.Equal(solicitacao.CorrelationId, deserialized.CorrelationId);
         Assert.Equal(solicitacao.OrdemServicoId, deserialized.OrdemServicoId);
-        Assert.Equal(solicitacao.StatusAnterior, deserialized.StatusAnterior);
         Assert.Equal(2, deserialized.Itens.Count);
         Assert.Equal(solicitacao.Itens[0].ItemEstoqueId, deserialized.Itens[0].ItemEstoqueId);
         Assert.Equal(solicitacao.Itens[0].Quantidade, deserialized.Itens[0].Quantidade);
@@ -54,7 +52,6 @@ public class ReducaoEstoqueContractsTests
         var json = @$"{{
             ""correlationId"": ""{correlationId}"",
             ""ordemServicoId"": ""{ordemServicoId}"",
-            ""statusAnterior"": ""AguardandoAprovacao"",
             ""itens"": [
                 {{
                     ""itemEstoqueId"": ""{itemId1}"",
@@ -77,7 +74,6 @@ public class ReducaoEstoqueContractsTests
         Assert.NotNull(solicitacao);
         Assert.Equal(correlationId, solicitacao.CorrelationId);
         Assert.Equal(ordemServicoId, solicitacao.OrdemServicoId);
-        Assert.Equal("AguardandoAprovacao", solicitacao.StatusAnterior);
         Assert.Equal(2, solicitacao.Itens.Count);
         Assert.Equal(itemId1, solicitacao.Itens[0].ItemEstoqueId);
         Assert.Equal(10, solicitacao.Itens[0].Quantidade);
@@ -220,7 +216,6 @@ public class ReducaoEstoqueContractsTests
         {
             CorrelationId = Guid.NewGuid(),
             OrdemServicoId = Guid.NewGuid(),
-            StatusAnterior = "EmExecucao",
             Itens = new List<ItemReducao>()
         };
 

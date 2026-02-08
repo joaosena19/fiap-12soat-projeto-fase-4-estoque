@@ -17,11 +17,6 @@ public record ReducaoEstoqueSolicitacao
     public Guid OrdemServicoId { get; init; }
 
     /// <summary>
-    /// Status anterior da ordem de serviço antes da aprovação, usado para compensação em caso de falha.
-    /// </summary>
-    public string StatusAnterior { get; init; } = string.Empty;
-
-    /// <summary>
     /// Lista de itens de estoque a serem reduzidos.
     /// </summary>
     public List<ItemReducao> Itens { get; init; } = new();
