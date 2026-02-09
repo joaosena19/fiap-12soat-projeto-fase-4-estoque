@@ -1,8 +1,10 @@
+using Application.Contracts.Monitoramento;
 using Infrastructure.Database;
 using Infrastructure.Messaging.Contracts;
 using Infrastructure.Repositories.Estoque;
 using MassTransit;
 using Microsoft.Extensions.Logging;
+using SerilogContext = Serilog.Context.LogContext;
 
 namespace Infrastructure.Messaging.Consumers;
 
@@ -27,6 +29,20 @@ public class ReducaoEstoqueSolicitacaoConsumer : BaseConsumer, IConsumer<Reducao
         var logger = CriarLoggerPara<ReducaoEstoqueSolicitacaoConsumer>();
         
         var msg = context.Message;
+
+        // Enriquecer todos os logs do consumer com o CorrelationId da mensagem
+        using (SerilogContext.PushProperty("CorrelationId", msg.CorrelationId))
+        {
+            await ProcessarMensagemAsync(gateway, logger, context, msg);
+        }
+    }
+
+    private async Task ProcessarMensagemAsync(
+        ItemEstoqueRepository gateway,
+        IAppLogger logger,
+        ConsumeContext<ReducaoEstoqueSolicitacao> context,
+        ReducaoEstoqueSolicitacao msg)
+    {
         logger.LogInformation(
             "Recebida solicitação de redução de estoque para OS {OrdemServicoId}. CorrelationId: {CorrelationId}",
             msg.OrdemServicoId, 
