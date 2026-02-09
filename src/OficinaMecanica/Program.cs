@@ -18,11 +18,13 @@ var loggerConfig = new LoggerConfiguration()
     .WriteTo.Console();
 
 var licenseKey = configuration["NEW_RELIC_LICENSE_KEY"];
+var appName = configuration["NEW_RELIC_APP_NAME"] ?? "EstoqueService";
+
 if (!string.IsNullOrWhiteSpace(licenseKey))
 {
     loggerConfig.WriteTo.NewRelicLogs(
         endpointUrl: "https://log-api.newrelic.com/log/v1",
-        applicationName: "Fiap.Fase3.Oficina.API",
+        applicationName: appName,
         licenseKey: licenseKey
     );
 }
