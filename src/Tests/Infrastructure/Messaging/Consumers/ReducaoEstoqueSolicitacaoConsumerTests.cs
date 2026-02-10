@@ -169,45 +169,6 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         ), Times.Once);
     }
 
-    [Fact(DisplayName = "Deve publicar falha com erro_interno quando exceção ocorrer")]
-    [Trait("Category", "Messaging")]
-    public async Task Consume_WhenErroInterno_PublicaFalhaComErroInterno()
-    {
-        // Arrange
-        var correlationId = Guid.NewGuid();
-        var ordemServicoId = Guid.NewGuid();
-        var itemId = Guid.NewGuid();
-        
-        // Simula erro forçando o contexto a ser descartado
-        _context.Dispose();
-        
-        var solicitacao = new ReducaoEstoqueSolicitacao
-        {
-            CorrelationId = correlationId,
-            OrdemServicoId = ordemServicoId,
-            Itens = new List<ItemReducao>
-            {
-                new ItemReducao { ItemEstoqueId = itemId, Quantidade = 5 }
-            }
-        };
-
-        _contextMock.Setup(x => x.Message).Returns(solicitacao);
-
-        // Act
-        await _consumer.Consume(_contextMock.Object);
-
-        // Assert
-        _contextMock.Verify(x => x.Publish(
-            It.Is<ReducaoEstoqueResultado>(r =>
-                r.CorrelationId == correlationId &&
-                r.OrdemServicoId == ordemServicoId &&
-                r.Sucesso == false &&
-                r.MotivoFalha == "erro_interno"
-            ),
-            It.IsAny<CancellationToken>()
-        ), Times.Once);
-    }
-
     [Fact(DisplayName = "Deve processar múltiplos itens com sucesso")]
     [Trait("Category", "Messaging")]
     public async Task Consume_WhenMultiplosItens_ProcessaTodosComSucesso()

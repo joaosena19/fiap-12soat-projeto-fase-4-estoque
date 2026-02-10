@@ -12,7 +12,7 @@
     <Compile Remove="Application\Cadastros.bak\**\*.cs" />
     <Compile Remove="Application\Identidade.bak\**\*.cs" />
     <Compile Remove="Application\OrdemServico.bak\**\*.cs" />
-    <Compile Remove="Application\SharedHelpers\**\*.cs.bak" />
+    <Compile Remove="Application\Helpers\**\*.cs.bak" />
     <Compile Remove="Domain\Cadastros.bak\**\*.cs" />
     <Compile Remove="Domain\Identidade.bak\**\*.cs" />
     <Compile Remove="Domain\OrdemServico.bak\**\*.cs" />

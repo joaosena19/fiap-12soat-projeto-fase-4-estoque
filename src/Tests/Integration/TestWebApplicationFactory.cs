@@ -32,7 +32,7 @@ namespace Tests.Integration
             // Sobrescreve o appsettings para usar o HmacSecret de teste
             builder.ConfigureAppConfiguration((context, config) =>
             {
-                var overrides = new Dictionary<string, string>
+                var overrides = new Dictionary<string, string?>
                 {
                     ["Webhook:HmacSecret"] = TestHmacUtils.TestHmacSecret,
                     ["Jwt:Key"] = JwtTestConstants.Key,
