@@ -90,3 +90,8 @@ Thumbs.db
 *.tfstate.*
 *.tfvars
 .terraform.tfstate.lock.info
+
+# Test reports and scripts
+**/Tests/Report/
+**/generate-test-reports.bat
+**/generate-test-reports.ps1
