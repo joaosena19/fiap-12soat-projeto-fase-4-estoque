@@ -7,6 +7,7 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Tests.Helpers;
 using Xunit;
 
 namespace Tests.Infrastructure.Messaging.Consumers;
@@ -25,12 +26,8 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
 
     public ReducaoEstoqueSolicitacaoConsumerTests()
     {
-        // Setup InMemory database
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-        
-        _context = new AppDbContext(options);
+        // Setup InMemory database usando builder
+        _context = AppDbContextInMemoryBuilder.Novo().Build();
         _loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
         _contextMock = new Mock<ConsumeContext<ReducaoEstoqueSolicitacao>>();
         _consumer = new ReducaoEstoqueSolicitacaoConsumer(_context, _loggerFactory);
@@ -43,27 +40,28 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         _loggerFactory.Dispose();
     }
 
-    [Fact(DisplayName = "Deve reduzir estoque e publicar sucesso quando estoque suficiente")]
+    [Fact(DisplayName = "Consumir redução de estoque deve reduzir quantidade e publicar sucesso quando estoque suficiente")]
     [Trait("Category", "Messaging")]
-    public async Task Consume_WhenEstoqueSuficiente_ReduzQuantidadeEPublicaSucesso()
+    public async Task ConsumeReducaoEstoque_Deve_ReduzirQuantidadeEPublicarSucesso_Quando_EstoqueSuficiente()
     {
         // Arrange
         var correlationId = Guid.NewGuid();
         var ordemServicoId = Guid.NewGuid();
         
-        var itemEstoque = ItemEstoque.Criar("Pneu", 10, TipoItemEstoqueEnum.Peca, 250.00m);
+        var itemEstoque = ItemEstoqueTestBuilder.Novo()
+            .ComNome("Pneu")
+            .ComQuantidade(10)
+            .ComTipo(TipoItemEstoqueEnum.Peca)
+            .ComPreco(250.00m)
+            .Build();
         _context.ItensEstoque.Add(itemEstoque);
         await _context.SaveChangesAsync();
         
-        var solicitacao = new ReducaoEstoqueSolicitacao
-        {
-            CorrelationId = correlationId,
-            OrdemServicoId = ordemServicoId,
-            Itens = new List<ItemReducao>
-            {
-                new ItemReducao { ItemEstoqueId = itemEstoque.Id, Quantidade = 5 }
-            }
-        };
+        var solicitacao = ReducaoEstoqueSolicitacaoBuilder.Novo()
+            .ComCorrelationId(correlationId)
+            .ComOrdemServicoId(ordemServicoId)
+            .ComItem(itemEstoque.Id, 5)
+            .Build();
 
         _contextMock.Setup(x => x.Message).Returns(solicitacao);
 
@@ -87,29 +85,30 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         Assert.Equal(5, itemAtualizado.Quantidade.Valor);
     }
 
-    [Fact(DisplayName = "Deve publicar falha quando estoque insuficiente")]
+    [Fact(DisplayName = "Consumir redução de estoque deve publicar falha com motivo quando estoque insuficiente")]
     [Trait("Category", "Messaging")]
-    public async Task Consume_WhenEstoqueInsuficiente_PublicaFalhaComMotivo()
+    public async Task ConsumeReducaoEstoque_Deve_PublicarFalhaComMotivo_Quando_EstoqueInsuficiente()
     {
         // Arrange
         var correlationId = Guid.NewGuid();
         var ordemServicoId = Guid.NewGuid();
         
-        var itemEstoque = ItemEstoque.Criar("Pneu", 3, TipoItemEstoqueEnum.Peca, 250.00m);
+        var itemEstoque = ItemEstoqueTestBuilder.Novo()
+            .ComNome("Pneu")
+            .ComQuantidade(3)
+            .ComTipo(TipoItemEstoqueEnum.Peca)
+            .ComPreco(250.00m)
+            .Build();
         _context.ItensEstoque.Add(itemEstoque);
         await _context.SaveChangesAsync();
         
         var quantidadeOriginal = itemEstoque.Quantidade.Valor;
         
-        var solicitacao = new ReducaoEstoqueSolicitacao
-        {
-            CorrelationId = correlationId,
-            OrdemServicoId = ordemServicoId,
-            Itens = new List<ItemReducao>
-            {
-                new ItemReducao { ItemEstoqueId = itemEstoque.Id, Quantidade = 10 }
-            }
-        };
+        var solicitacao = ReducaoEstoqueSolicitacaoBuilder.Novo()
+            .ComCorrelationId(correlationId)
+            .ComOrdemServicoId(ordemServicoId)
+            .ComItem(itemEstoque.Id, 10)
+            .Build();
 
         _contextMock.Setup(x => x.Message).Returns(solicitacao);
 
@@ -133,24 +132,20 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         Assert.Equal(quantidadeOriginal, itemAtualizado.Quantidade.Valor);
     }
 
-    [Fact(DisplayName = "Deve publicar falha quando item não encontrado")]
+    [Fact(DisplayName = "Consumir redução de estoque deve publicar falha com motivo quando item não encontrado")]
     [Trait("Category", "Messaging")]
-    public async Task Consume_WhenItemNaoEncontrado_PublicaFalhaComMotivo()
+    public async Task ConsumeReducaoEstoque_Deve_PublicarFalhaComMotivo_Quando_ItemNaoEncontrado()
     {
         // Arrange
         var correlationId = Guid.NewGuid();
         var ordemServicoId = Guid.NewGuid();
         var itemIdInexistente = Guid.NewGuid();
         
-        var solicitacao = new ReducaoEstoqueSolicitacao
-        {
-            CorrelationId = correlationId,
-            OrdemServicoId = ordemServicoId,
-            Itens = new List<ItemReducao>
-            {
-                new ItemReducao { ItemEstoqueId = itemIdInexistente, Quantidade = 5 }
-            }
-        };
+        var solicitacao = ReducaoEstoqueSolicitacaoBuilder.Novo()
+            .ComCorrelationId(correlationId)
+            .ComOrdemServicoId(ordemServicoId)
+            .ComItem(itemIdInexistente, 5)
+            .Build();
 
         _contextMock.Setup(x => x.Message).Returns(solicitacao);
 
@@ -169,30 +164,36 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         ), Times.Once);
     }
 
-    [Fact(DisplayName = "Deve processar múltiplos itens com sucesso")]
+    [Fact(DisplayName = "Consumir redução de estoque deve processar todos itens com sucesso quando múltiplos itens")]
     [Trait("Category", "Messaging")]
-    public async Task Consume_WhenMultiplosItens_ProcessaTodosComSucesso()
+    public async Task ConsumeReducaoEstoque_Deve_ProcessarTodosItensComSucesso_Quando_MultiplosItens()
     {
         // Arrange
         var correlationId = Guid.NewGuid();
         var ordemServicoId = Guid.NewGuid();
         
-        var itemEstoque1 = ItemEstoque.Criar("Pneu", 20, TipoItemEstoqueEnum.Peca, 250.00m);
-        var itemEstoque2 = ItemEstoque.Criar("Óleo", 15, TipoItemEstoqueEnum.Insumo, 45.00m);
+        var itemEstoque1 = ItemEstoqueTestBuilder.Novo()
+            .ComNome("Pneu")
+            .ComQuantidade(20)
+            .ComTipo(TipoItemEstoqueEnum.Peca)
+            .ComPreco(250.00m)
+            .Build();
+        var itemEstoque2 = ItemEstoqueTestBuilder.Novo()
+            .ComNome("Óleo")
+            .ComQuantidade(15)
+            .ComTipo(TipoItemEstoqueEnum.Insumo)
+            .ComPreco(45.00m)
+            .Build();
         _context.ItensEstoque.Add(itemEstoque1);
         _context.ItensEstoque.Add(itemEstoque2);
         await _context.SaveChangesAsync();
         
-        var solicitacao = new ReducaoEstoqueSolicitacao
-        {
-            CorrelationId = correlationId,
-            OrdemServicoId = ordemServicoId,
-            Itens = new List<ItemReducao>
-            {
-                new ItemReducao { ItemEstoqueId = itemEstoque1.Id, Quantidade = 4 },
-                new ItemReducao { ItemEstoqueId = itemEstoque2.Id, Quantidade = 2 }
-            }
-        };
+        var solicitacao = ReducaoEstoqueSolicitacaoBuilder.Novo()
+            .ComCorrelationId(correlationId)
+            .ComOrdemServicoId(ordemServicoId)
+            .ComItem(itemEstoque1.Id, 4)
+            .ComItem(itemEstoque2.Id, 2)
+            .Build();
 
         _contextMock.Setup(x => x.Message).Returns(solicitacao);
 
@@ -218,16 +219,26 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         Assert.Equal(13, item2Atualizado.Quantidade.Valor);
     }
 
-    [Fact(DisplayName = "Deve falhar se um dos múltiplos itens não tiver estoque suficiente")]
+    [Fact(DisplayName = "Consumir redução de estoque não deve reduzir quantidade quando múltiplos itens e um insuficiente")]
     [Trait("Category", "Messaging")]
-    public async Task Consume_WhenMultiplosItensEUmInsuficiente_NaoReducNenhum()
+    public async Task ConsumeReducaoEstoque_NaoDeve_ReduzirQuantidade_Quando_MultiplosItensEUmInsuficiente()
     {
         // Arrange
         var correlationId = Guid.NewGuid();
         var ordemServicoId = Guid.NewGuid();
         
-        var itemEstoque1 = ItemEstoque.Criar("Pneu", 20, TipoItemEstoqueEnum.Peca, 250.00m);
-        var itemEstoque2 = ItemEstoque.Criar("Óleo", 1, TipoItemEstoqueEnum.Insumo, 45.00m);
+        var itemEstoque1 = ItemEstoqueTestBuilder.Novo()
+            .ComNome("Pneu")
+            .ComQuantidade(20)
+            .ComTipo(TipoItemEstoqueEnum.Peca)
+            .ComPreco(250.00m)
+            .Build();
+        var itemEstoque2 = ItemEstoqueTestBuilder.Novo()
+            .ComNome("Óleo")
+            .ComQuantidade(1)
+            .ComTipo(TipoItemEstoqueEnum.Insumo)
+            .ComPreco(45.00m)
+            .Build();
         _context.ItensEstoque.Add(itemEstoque1);
         _context.ItensEstoque.Add(itemEstoque2);
         await _context.SaveChangesAsync();
@@ -235,16 +246,12 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         var quantidadeOriginal1 = itemEstoque1.Quantidade.Valor;
         var quantidadeOriginal2 = itemEstoque2.Quantidade.Valor;
         
-        var solicitacao = new ReducaoEstoqueSolicitacao
-        {
-            CorrelationId = correlationId,
-            OrdemServicoId = ordemServicoId,
-            Itens = new List<ItemReducao>
-            {
-                new ItemReducao { ItemEstoqueId = itemEstoque1.Id, Quantidade = 4 },
-                new ItemReducao { ItemEstoqueId = itemEstoque2.Id, Quantidade = 5 } // Mais do que disponível
-            }
-        };
+        var solicitacao = ReducaoEstoqueSolicitacaoBuilder.Novo()
+            .ComCorrelationId(correlationId)
+            .ComOrdemServicoId(ordemServicoId)
+            .ComItem(itemEstoque1.Id, 4)
+            .ComItem(itemEstoque2.Id, 5) // Mais do que disponível
+            .Build();
 
         _contextMock.Setup(x => x.Message).Returns(solicitacao);
 
@@ -268,27 +275,28 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         ), Times.Once);
     }
 
-    [Fact(DisplayName = "Deve propagar CorrelationId no processamento")]
+    [Fact(DisplayName = "Consumir redução de estoque deve propagar CorrelationId no resultado")]
     [Trait("Category", "Messaging")]
-    public async Task Consume_WhenProcessing_PropagaCorrelationId()
+    public async Task ConsumeReducaoEstoque_Deve_PropagarCorrelationIdNoResultado()
     {
         // Arrange
         var correlationId = Guid.NewGuid();
         var ordemServicoId = Guid.NewGuid();
         
-        var itemEstoque = ItemEstoque.Criar("Pneu", 10, TipoItemEstoqueEnum.Peca, 250.00m);
+        var itemEstoque = ItemEstoqueTestBuilder.Novo()
+            .ComNome("Pneu")
+            .ComQuantidade(10)
+            .ComTipo(TipoItemEstoqueEnum.Peca)
+            .ComPreco(250.00m)
+            .Build();
         _context.ItensEstoque.Add(itemEstoque);
         await _context.SaveChangesAsync();
         
-        var solicitacao = new ReducaoEstoqueSolicitacao
-        {
-            CorrelationId = correlationId,
-            OrdemServicoId = ordemServicoId,
-            Itens = new List<ItemReducao>
-            {
-                new ItemReducao { ItemEstoqueId = itemEstoque.Id, Quantidade = 5 }
-            }
-        };
+        var solicitacao = ReducaoEstoqueSolicitacaoBuilder.Novo()
+            .ComCorrelationId(correlationId)
+            .ComOrdemServicoId(ordemServicoId)
+            .ComItem(itemEstoque.Id, 5)
+            .Build();
 
         _contextMock.Setup(x => x.Message).Returns(solicitacao);
 
