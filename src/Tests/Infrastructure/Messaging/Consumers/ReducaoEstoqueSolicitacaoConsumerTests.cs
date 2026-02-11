@@ -20,7 +20,7 @@ namespace Tests.Infrastructure.Messaging.Consumers;
 public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
 {
     private readonly AppDbContext _context;
-    private readonly ILoggerFactory _loggerFactory;
+    private readonly Mock<ILoggerFactory> _loggerFactoryMock;
     private readonly Mock<ConsumeContext<ReducaoEstoqueSolicitacao>> _contextMock;
     private readonly ReducaoEstoqueSolicitacaoConsumer _consumer;
 
@@ -28,16 +28,22 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
     {
         // Setup InMemory database usando builder
         _context = AppDbContextInMemoryBuilder.Novo().Build();
-        _loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        
+        // Setup mocked logger factory (hermetic - sem console output)
+        _loggerFactoryMock = new Mock<ILoggerFactory>();
+        var mockLogger = new Mock<ILogger>();
+        _loggerFactoryMock
+            .Setup(x => x.CreateLogger(It.IsAny<string>()))
+            .Returns(mockLogger.Object);
+        
         _contextMock = new Mock<ConsumeContext<ReducaoEstoqueSolicitacao>>();
-        _consumer = new ReducaoEstoqueSolicitacaoConsumer(_context, _loggerFactory);
+        _consumer = new ReducaoEstoqueSolicitacaoConsumer(_context, _loggerFactoryMock.Object);
     }
 
     public void Dispose()
     {
         _context.Database.EnsureDeleted();
         _context.Dispose();
-        _loggerFactory.Dispose();
     }
 
     [Fact(DisplayName = "Consumir redução de estoque deve reduzir quantidade e publicar sucesso quando estoque suficiente")]
