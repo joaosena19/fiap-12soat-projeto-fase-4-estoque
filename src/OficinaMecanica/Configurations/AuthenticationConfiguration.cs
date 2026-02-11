@@ -45,9 +45,6 @@ namespace API.Configurations
 
             services.AddAuthorization();
 
-            // Registrar serviços de webhook
-            services.AddScoped<IHmacValidationService, HmacValidationService>();
-
             return services;
         }
     }

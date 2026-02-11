@@ -33,7 +33,6 @@ namespace Tests.Integration
             {
                 var overrides = new Dictionary<string, string?>
                 {
-                    ["Webhook:HmacSecret"] = TestHmacUtils.TestHmacSecret,
                     ["Jwt:Key"] = JwtTestConstants.Key,
                     ["Jwt:Issuer"] = JwtTestConstants.Issuer,
                     ["Jwt:Audience"] = JwtTestConstants.Audience,
