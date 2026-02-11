@@ -39,6 +39,17 @@ namespace Domain.Estoque.Aggregates
             );
         }
 
+        public static ItemEstoque Reidratar(Guid id, string nome, int quantidade, TipoItemEstoqueEnum tipoItemEstoque, decimal preco)
+        {
+            return new ItemEstoque(
+                id,
+                new Nome(nome), 
+                new Quantidade(quantidade), 
+                new TipoItemEstoque(tipoItemEstoque),
+                new PrecoItem(preco)
+            );
+        }
+
         public void Atualizar(string nome, int quantidade, TipoItemEstoqueEnum tipoItemEstoque, decimal preco)
         {
             Nome = new Nome(nome);

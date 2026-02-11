@@ -1,6 +1,7 @@
 using Domain.Estoque.Aggregates;
 using Domain.Estoque.Enums;
 using Microsoft.Extensions.Options;
+using Shared.Seed;
 
 namespace Infrastructure.Database
 {
@@ -16,9 +17,9 @@ namespace Infrastructure.Database
             var itensEstoqueDeTeste = new List<ItemEstoque>
             {
                 // Peças
-                ItemEstoque.Criar("Óleo Motor 5W30", 50, TipoItemEstoqueEnum.Peca, 45.90m),
-                ItemEstoque.Criar("Filtro de Óleo", 30, TipoItemEstoqueEnum.Peca, 25.50m),
-                ItemEstoque.Criar("Pastilha de Freio Dianteira", 20, TipoItemEstoqueEnum.Peca, 89.90m),
+                ItemEstoque.Reidratar(SeedIds.ItensEstoque.OleoMotor5w30, "Óleo Motor 5W30", 50, TipoItemEstoqueEnum.Peca, 45.90m),
+                ItemEstoque.Reidratar(SeedIds.ItensEstoque.FiltroDeOleo, "Filtro de Óleo", 30, TipoItemEstoqueEnum.Peca, 25.50m),
+                ItemEstoque.Reidratar(SeedIds.ItensEstoque.PastilhaDeFreioDianteira, "Pastilha de Freio Dianteira", 20, TipoItemEstoqueEnum.Peca, 89.90m),
                 ItemEstoque.Criar("Pastilha de Freio Traseira", 25, TipoItemEstoqueEnum.Peca, 65.90m),
                 ItemEstoque.Criar("Filtro de Ar", 40, TipoItemEstoqueEnum.Peca, 32.90m),
                 ItemEstoque.Criar("Correia Dentada", 15, TipoItemEstoqueEnum.Peca, 125.90m),

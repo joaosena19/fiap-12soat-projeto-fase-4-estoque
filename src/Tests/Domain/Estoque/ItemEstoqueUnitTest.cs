@@ -31,6 +31,29 @@ namespace Tests.Domain.Estoque
             itemEstoque.Preco.Valor.Should().Be(preco);
         }
 
+        [Fact(DisplayName = "Deve reidratar item de estoque com ID específico e dados válidos")]
+        [Trait("Método", "Reidratar")]
+        public void Reidratar_DeveReidratarItemEstoqueComIdEspecificoEDadosValidos()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var nome = "Filtro de Óleo";
+            var quantidade = 50;
+            var tipoItemEstoque = TipoItemEstoqueEnum.Peca;
+            var preco = 25.50m;
+
+            // Act
+            var itemEstoque = ItemEstoque.Reidratar(id, nome, quantidade, tipoItemEstoque, preco);
+
+            // Assert
+            itemEstoque.Should().NotBeNull();
+            itemEstoque.Id.Should().Be(id);
+            itemEstoque.Nome.Valor.Should().Be(nome);
+            itemEstoque.Quantidade.Valor.Should().Be(quantidade);
+            itemEstoque.TipoItemEstoque.Valor.Should().Be(tipoItemEstoque);
+            itemEstoque.Preco.Valor.Should().Be(preco);
+        }
+
         #endregion
 
         #region Testes Método Atualizar
