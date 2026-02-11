@@ -1,14 +1,14 @@
-using Infrastructure.Messaging.Contracts;
+using Infrastructure.Messaging.DTOs;
 using System.Text.Json;
 using Xunit;
 
-namespace Tests.Infrastructure.Messaging.Contracts;
+namespace Tests.Infrastructure.Messaging.DTOs;
 
 /// <summary>
 /// Testes unitários para os contratos de mensageria relacionados à redução de estoque.
 /// Valida serialização, deserialização e estrutura dos contratos conforme especificado no Plano de Execução E-03.
 /// </summary>
-public class ReducaoEstoqueContractsTests
+public class ReducaoEstoqueDTOsTests
 {
     [Fact(DisplayName = "ReducaoEstoqueSolicitacao deve serializar e deserializar com todos os campos")]
     [Trait("Category", "Messaging")]

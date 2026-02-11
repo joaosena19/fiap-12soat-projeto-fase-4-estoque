@@ -2,7 +2,7 @@ using Domain.Estoque.Aggregates;
 using Domain.Estoque.Enums;
 using Infrastructure.Database;
 using Infrastructure.Messaging.Consumers;
-using Infrastructure.Messaging.Contracts;
+using Infrastructure.Messaging.DTOs;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

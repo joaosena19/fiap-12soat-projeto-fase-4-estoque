@@ -1,6 +1,6 @@
 using Application.Contracts.Monitoramento;
 using Infrastructure.Database;
-using Infrastructure.Messaging.Contracts;
+using Infrastructure.Messaging.DTOs;
 using Infrastructure.Repositories.Estoque;
 using MassTransit;
 using Microsoft.Extensions.Logging;
