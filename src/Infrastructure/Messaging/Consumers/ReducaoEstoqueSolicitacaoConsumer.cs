@@ -1,6 +1,7 @@
 using Application.Contracts.Monitoramento;
 using Infrastructure.Database;
 using Infrastructure.Messaging.DTOs;
+using Infrastructure.Messaging.Publishers;
 using Infrastructure.Repositories.Estoque;
 using MassTransit;
 using Microsoft.Extensions.Logging;
@@ -26,6 +27,7 @@ public class ReducaoEstoqueSolicitacaoConsumer : BaseConsumer, IConsumer<Reducao
     {
         // Seguindo o padrão Pure DI: criar dependências manualmente
         var gateway = new ItemEstoqueRepository(_context);
+        var publisher = new ReducaoEstoqueResultadoPublisher();
         var logger = CriarLoggerPara<ReducaoEstoqueSolicitacaoConsumer>();
         
         var msg = context.Message;
@@ -33,12 +35,13 @@ public class ReducaoEstoqueSolicitacaoConsumer : BaseConsumer, IConsumer<Reducao
         // Enriquecer todos os logs do consumer com o CorrelationId da mensagem
         using (SerilogContext.PushProperty("CorrelationId", msg.CorrelationId))
         {
-            await ProcessarMensagemAsync(gateway, logger, context, msg);
+            await ProcessarMensagemAsync(gateway, publisher, logger, context, msg);
         }
     }
 
     private async Task ProcessarMensagemAsync(
         ItemEstoqueRepository gateway,
+        IReducaoEstoqueResultadoPublisher publisher,
         IAppLogger logger,
         ConsumeContext<ReducaoEstoqueSolicitacao> context,
         ReducaoEstoqueSolicitacao msg)
@@ -63,13 +66,7 @@ public class ReducaoEstoqueSolicitacaoConsumer : BaseConsumer, IConsumer<Reducao
                         msg.OrdemServicoId,
                         msg.CorrelationId);
 
-                    await context.Publish(new ReducaoEstoqueResultado
-                    {
-                        CorrelationId = msg.CorrelationId,
-                        OrdemServicoId = msg.OrdemServicoId,
-                        Sucesso = false,
-                        MotivoFalha = "estoque_insuficiente"
-                    });
+                    await publisher.PublicarFalhaAsync(context, msg.CorrelationId, msg.OrdemServicoId, "estoque_insuficiente");
                     return;
                 }
 
@@ -84,13 +81,7 @@ public class ReducaoEstoqueSolicitacaoConsumer : BaseConsumer, IConsumer<Reducao
                         msg.OrdemServicoId,
                         msg.CorrelationId);
 
-                    await context.Publish(new ReducaoEstoqueResultado
-                    {
-                        CorrelationId = msg.CorrelationId,
-                        OrdemServicoId = msg.OrdemServicoId,
-                        Sucesso = false,
-                        MotivoFalha = "estoque_insuficiente"
-                    });
+                    await publisher.PublicarFalhaAsync(context, msg.CorrelationId, msg.OrdemServicoId, "estoque_insuficiente");
                     return;
                 }
             }
@@ -116,12 +107,7 @@ public class ReducaoEstoqueSolicitacaoConsumer : BaseConsumer, IConsumer<Reducao
             }
 
             // Publicar resultado de sucesso
-            await context.Publish(new ReducaoEstoqueResultado
-            {
-                CorrelationId = msg.CorrelationId,
-                OrdemServicoId = msg.OrdemServicoId,
-                Sucesso = true
-            });
+            await publisher.PublicarSucessoAsync(context, msg.CorrelationId, msg.OrdemServicoId);
 
             logger.LogInformation(
                 "Redução de estoque concluída com sucesso para OS {OrdemServicoId}. CorrelationId: {CorrelationId}",
@@ -136,13 +122,7 @@ public class ReducaoEstoqueSolicitacaoConsumer : BaseConsumer, IConsumer<Reducao
                 msg.OrdemServicoId,
                 msg.CorrelationId);
 
-            await context.Publish(new ReducaoEstoqueResultado
-            {
-                CorrelationId = msg.CorrelationId,
-                OrdemServicoId = msg.OrdemServicoId,
-                Sucesso = false,
-                MotivoFalha = "erro_interno"
-            });
+            await publisher.PublicarFalhaAsync(context, msg.CorrelationId, msg.OrdemServicoId, "erro_interno");
         }
     }
 }
