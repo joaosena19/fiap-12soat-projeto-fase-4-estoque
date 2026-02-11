@@ -59,9 +59,6 @@ namespace API.Configurations.Swagger
                         Array.Empty<string>()
                     }
                 });
-
-                // Adiciona filtro personalizado para documentar endpoint de autenticação externa
-                c.DocumentFilter<ExternalAuthRouteFilter>();
             });
 
             return services;
