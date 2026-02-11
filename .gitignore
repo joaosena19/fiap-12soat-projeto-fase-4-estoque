@@ -73,6 +73,9 @@ publish/
 # Development settings
 appsettings.Development.json
 
+# Project documentation
+plans/
+
 # OS
 .DS_Store
 Thumbs.db
