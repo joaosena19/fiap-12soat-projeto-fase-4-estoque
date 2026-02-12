@@ -1,11 +1,8 @@
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.DependencyInjection;
-using System.Net.Http.Headers;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Text;
 using Tests.Helpers;
 
@@ -25,7 +22,7 @@ namespace Tests.Integration
         /// <summary>
         /// Cria um cliente HTTP com token JWT válido
         /// </summary>
-        public static HttpClient CreateAuthenticatedClient<TEntryPoint>(this WebApplicationFactory<TEntryPoint> factory, 
+        public static HttpClient CreateAuthenticatedClient<TEntryPoint>(this WebApplicationFactory<TEntryPoint> factory,
             bool isAdmin = true, Guid? clienteId = null, Guid? usuarioId = null)
             where TEntryPoint : class
         {

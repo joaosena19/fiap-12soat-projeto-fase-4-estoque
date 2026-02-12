@@ -16,20 +16,17 @@ namespace Infrastructure.Messaging.Consumers;
 /// </summary>
 public class ReducaoEstoqueSolicitacaoConsumer : BaseConsumer, IConsumer<ReducaoEstoqueSolicitacao>
 {
-    public ReducaoEstoqueSolicitacaoConsumer(
-        AppDbContext context,
-        ILoggerFactory loggerFactory)
-        : base(context, loggerFactory)
+    public ReducaoEstoqueSolicitacaoConsumer(AppDbContext context, ILoggerFactory loggerFactory) : base(context, loggerFactory)
     {
     }
 
     public async Task Consume(ConsumeContext<ReducaoEstoqueSolicitacao> context)
     {
-        // Seguindo o padrão Pure DI: criar dependências manualmente
+        // Pure DI: criar dependências manualmente
         var gateway = new ItemEstoqueRepository(_context);
         var publisher = new ReducaoEstoqueResultadoPublisher();
         var logger = CriarLoggerPara<ReducaoEstoqueSolicitacaoConsumer>();
-        
+
         var msg = context.Message;
 
         // Enriquecer todos os logs do consumer com o CorrelationId da mensagem
@@ -39,17 +36,9 @@ public class ReducaoEstoqueSolicitacaoConsumer : BaseConsumer, IConsumer<Reducao
         }
     }
 
-    private async Task ProcessarMensagemAsync(
-        ItemEstoqueRepository gateway,
-        IReducaoEstoqueResultadoPublisher publisher,
-        IAppLogger logger,
-        ConsumeContext<ReducaoEstoqueSolicitacao> context,
-        ReducaoEstoqueSolicitacao msg)
+    private async Task ProcessarMensagemAsync(ItemEstoqueRepository gateway, IReducaoEstoqueResultadoPublisher publisher, IAppLogger logger, ConsumeContext<ReducaoEstoqueSolicitacao> context, ReducaoEstoqueSolicitacao msg)
     {
-        logger.LogInformation(
-            "Recebida solicitação de redução de estoque para OS {OrdemServicoId}. CorrelationId: {CorrelationId}",
-            msg.OrdemServicoId, 
-            msg.CorrelationId);
+        logger.LogInformation("Recebida solicitação de redução de estoque para OS {OrdemServicoId}. CorrelationId: {CorrelationId}", msg.OrdemServicoId, msg.CorrelationId);
 
         try
         {
@@ -57,7 +46,7 @@ public class ReducaoEstoqueSolicitacaoConsumer : BaseConsumer, IConsumer<Reducao
             foreach (var item in msg.Itens)
             {
                 var estoque = await gateway.ObterPorIdAsync(item.ItemEstoqueId);
-                
+
                 if (estoque == null)
                 {
                     logger.LogWarning(
@@ -106,7 +95,6 @@ public class ReducaoEstoqueSolicitacaoConsumer : BaseConsumer, IConsumer<Reducao
                     msg.CorrelationId);
             }
 
-            // Publicar resultado de sucesso
             await publisher.PublicarSucessoAsync(context, msg.CorrelationId, msg.OrdemServicoId);
 
             logger.LogInformation(
