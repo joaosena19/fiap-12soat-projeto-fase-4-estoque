@@ -1,5 +1,6 @@
 using Domain.Estoque.Aggregates;
 using Domain.Estoque.Enums;
+using FluentAssertions;
 using Infrastructure.Database;
 using Infrastructure.Messaging.Consumers;
 using Infrastructure.Messaging.DTOs;
@@ -8,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Tests.Helpers;
+using Tests.Infrastructure.Messaging.Consumers.Helpers;
 using Xunit;
 
 namespace Tests.Infrastructure.Messaging.Consumers;
@@ -47,7 +49,8 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
     }
 
     [Fact(DisplayName = "Consumir redução de estoque deve reduzir quantidade e publicar sucesso quando estoque suficiente")]
-    [Trait("Category", "Messaging")]
+    [Trait("Categoria", "Mensageria")]
+    [Trait("Cenario", "Sucesso")]
     public async Task ConsumeReducaoEstoque_Deve_ReduzirQuantidadeEPublicarSucesso_Quando_EstoqueSuficiente()
     {
         // Arrange
@@ -75,24 +78,17 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         await _consumer.Consume(_contextMock.Object);
 
         // Assert
-        _contextMock.Verify(x => x.Publish(
-            It.Is<ReducaoEstoqueResultado>(r =>
-                r.CorrelationId == correlationId &&
-                r.OrdemServicoId == ordemServicoId &&
-                r.Sucesso == true &&
-                r.MotivoFalha == null
-            ),
-            It.IsAny<CancellationToken>()
-        ), Times.Once);
+        _contextMock.DeveTerPublicadoReducaoEstoqueResultadoSucesso(correlationId, ordemServicoId);
 
         // Verifica que a quantidade foi reduzida no banco
         var itemAtualizado = await _context.ItensEstoque.FindAsync(itemEstoque.Id);
-        Assert.NotNull(itemAtualizado);
-        Assert.Equal(5, itemAtualizado.Quantidade.Valor);
+        itemAtualizado.Should().NotBeNull();
+        itemAtualizado!.Quantidade.Valor.Should().Be(5);
     }
 
     [Fact(DisplayName = "Consumir redução de estoque deve publicar falha com motivo quando estoque insuficiente")]
-    [Trait("Category", "Messaging")]
+    [Trait("Categoria", "Mensageria")]
+    [Trait("Cenario", "Falha")]
     public async Task ConsumeReducaoEstoque_Deve_PublicarFalhaComMotivo_Quando_EstoqueInsuficiente()
     {
         // Arrange
@@ -122,24 +118,17 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         await _consumer.Consume(_contextMock.Object);
 
         // Assert
-        _contextMock.Verify(x => x.Publish(
-            It.Is<ReducaoEstoqueResultado>(r =>
-                r.CorrelationId == correlationId &&
-                r.OrdemServicoId == ordemServicoId &&
-                r.Sucesso == false &&
-                r.MotivoFalha == "estoque_insuficiente"
-            ),
-            It.IsAny<CancellationToken>()
-        ), Times.Once);
+        _contextMock.DeveTerPublicadoReducaoEstoqueResultadoFalha(correlationId, ordemServicoId, "estoque_insuficiente");
 
         // Verifica que a quantidade não foi alterada
         var itemAtualizado = await _context.ItensEstoque.FindAsync(itemEstoque.Id);
-        Assert.NotNull(itemAtualizado);
-        Assert.Equal(quantidadeOriginal, itemAtualizado.Quantidade.Valor);
+        itemAtualizado.Should().NotBeNull();
+        itemAtualizado!.Quantidade.Valor.Should().Be(quantidadeOriginal);
     }
 
     [Fact(DisplayName = "Consumir redução de estoque deve publicar falha com motivo quando item não encontrado")]
-    [Trait("Category", "Messaging")]
+    [Trait("Categoria", "Mensageria")]
+    [Trait("Cenario", "Falha")]
     public async Task ConsumeReducaoEstoque_Deve_PublicarFalhaComMotivo_Quando_ItemNaoEncontrado()
     {
         // Arrange
@@ -159,19 +148,12 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         await _consumer.Consume(_contextMock.Object);
 
         // Assert
-        _contextMock.Verify(x => x.Publish(
-            It.Is<ReducaoEstoqueResultado>(r =>
-                r.CorrelationId == correlationId &&
-                r.OrdemServicoId == ordemServicoId &&
-                r.Sucesso == false &&
-                r.MotivoFalha == "estoque_insuficiente"
-            ),
-            It.IsAny<CancellationToken>()
-        ), Times.Once);
+        _contextMock.DeveTerPublicadoReducaoEstoqueResultadoFalha(correlationId, ordemServicoId, "estoque_insuficiente");
     }
 
     [Fact(DisplayName = "Consumir redução de estoque deve processar todos itens com sucesso quando múltiplos itens")]
-    [Trait("Category", "Messaging")]
+    [Trait("Categoria", "Mensageria")]
+    [Trait("Cenario", "Sucesso")]
     public async Task ConsumeReducaoEstoque_Deve_ProcessarTodosItensComSucesso_Quando_MultiplosItens()
     {
         // Arrange
@@ -207,26 +189,20 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         await _consumer.Consume(_contextMock.Object);
 
         // Assert
-        _contextMock.Verify(x => x.Publish(
-            It.Is<ReducaoEstoqueResultado>(r =>
-                r.CorrelationId == correlationId &&
-                r.OrdemServicoId == ordemServicoId &&
-                r.Sucesso == true
-            ),
-            It.IsAny<CancellationToken>()
-        ), Times.Once);
+        _contextMock.DeveTerPublicadoReducaoEstoqueResultadoSucesso(correlationId, ordemServicoId);
 
         // Verifica que ambas as quantidades foram reduzidas
         var item1Atualizado = await _context.ItensEstoque.FindAsync(itemEstoque1.Id);
         var item2Atualizado = await _context.ItensEstoque.FindAsync(itemEstoque2.Id);
-        Assert.NotNull(item1Atualizado);
-        Assert.NotNull(item2Atualizado);
-        Assert.Equal(16, item1Atualizado.Quantidade.Valor);
-        Assert.Equal(13, item2Atualizado.Quantidade.Valor);
+        item1Atualizado.Should().NotBeNull();
+        item2Atualizado.Should().NotBeNull();
+        item1Atualizado!.Quantidade.Valor.Should().Be(16);
+        item2Atualizado!.Quantidade.Valor.Should().Be(13);
     }
 
     [Fact(DisplayName = "Consumir redução de estoque não deve reduzir quantidade quando múltiplos itens e um insuficiente")]
-    [Trait("Category", "Messaging")]
+    [Trait("Categoria", "Mensageria")]
+    [Trait("Cenario", "Falha")]
     public async Task ConsumeReducaoEstoque_NaoDeve_ReduzirQuantidade_Quando_MultiplosItensEUmInsuficiente()
     {
         // Arrange
@@ -267,22 +243,17 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         // Assert - nenhuma atualização deve ser feita
         var item1Atualizado = await _context.ItensEstoque.FindAsync(itemEstoque1.Id);
         var item2Atualizado = await _context.ItensEstoque.FindAsync(itemEstoque2.Id);
-        Assert.NotNull(item1Atualizado);
-        Assert.NotNull(item2Atualizado);
-        Assert.Equal(quantidadeOriginal1, item1Atualizado.Quantidade.Valor);
-        Assert.Equal(quantidadeOriginal2, item2Atualizado.Quantidade.Valor);
+        item1Atualizado.Should().NotBeNull();
+        item2Atualizado.Should().NotBeNull();
+        item1Atualizado!.Quantidade.Valor.Should().Be(quantidadeOriginal1);
+        item2Atualizado!.Quantidade.Valor.Should().Be(quantidadeOriginal2);
         
-        _contextMock.Verify(x => x.Publish(
-            It.Is<ReducaoEstoqueResultado>(r =>
-                r.Sucesso == false &&
-                r.MotivoFalha == "estoque_insuficiente"
-            ),
-            It.IsAny<CancellationToken>()
-        ), Times.Once);
+        _contextMock.DeveTerPublicadoReducaoEstoqueResultadoFalha(correlationId, ordemServicoId, "estoque_insuficiente");
     }
 
     [Fact(DisplayName = "Consumir redução de estoque deve propagar CorrelationId no resultado")]
-    [Trait("Category", "Messaging")]
+    [Trait("Categoria", "Mensageria")]
+    [Trait("Cenario", "Sucesso")]
     public async Task ConsumeReducaoEstoque_Deve_PropagarCorrelationIdNoResultado()
     {
         // Arrange
@@ -310,9 +281,6 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
         await _consumer.Consume(_contextMock.Object);
 
         // Assert - Verifica que o resultado publicado contém o CorrelationId correto
-        _contextMock.Verify(x => x.Publish(
-            It.Is<ReducaoEstoqueResultado>(r => r.CorrelationId == correlationId),
-            It.IsAny<CancellationToken>()
-        ), Times.Once);
+        _contextMock.DeveTerPublicadoReducaoEstoqueResultadoSucesso(correlationId, ordemServicoId);
     }
 }

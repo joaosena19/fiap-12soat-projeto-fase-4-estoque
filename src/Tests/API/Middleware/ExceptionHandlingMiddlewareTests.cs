@@ -11,7 +11,6 @@ namespace Tests.API.Middleware;
 /// <summary>
 /// Testes unitários para ExceptionHandlingMiddleware
 /// </summary>
-[Trait("Category", "Unit")]
 public class ExceptionHandlingMiddlewareTests : IClassFixture<ExceptionHandlingMiddlewareTestFixture>
 {
     private readonly ExceptionHandlingMiddlewareTestFixture _fixture;
