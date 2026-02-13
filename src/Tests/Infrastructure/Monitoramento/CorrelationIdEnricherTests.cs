@@ -8,160 +8,160 @@ namespace Tests.Infrastructure.Monitoramento.Correlation;
 
 public class CorrelationIdEnricherTests
 {
-    private readonly CorrelationIdEnricher _enricher;
-    private readonly Mock<ILogEventPropertyFactory> _propertyFactoryMock;
+    private readonly CorrelationIdEnricher _enriquecedor;
+    private readonly Mock<ILogEventPropertyFactory> _factoryPropriedadesMock;
 
     public CorrelationIdEnricherTests()
     {
-        _enricher = new CorrelationIdEnricher();
-        _propertyFactoryMock = new Mock<ILogEventPropertyFactory>();
+        _enriquecedor = new CorrelationIdEnricher();
+        _factoryPropriedadesMock = new Mock<ILogEventPropertyFactory>();
     }
 
-    [Fact]
-    public void Enrich_ShouldAddCorrelationId_WhenContextHasValueAndPropertyDoesNotExist()
+    [Fact(DisplayName = "Enrich deve adicionar CorrelationId quando contexto tem valor e propriedade não existe")]
+    public void Enrich_DeveAdicionarCorrelationId_QuandoContextoTemValorEPropriedadeNaoExiste()
     {
         // Arrange
         var correlationId = "test-correlation-id";
-        var logEvent = CreateLogEvent();
+        var eventoLog = CriarEventoLog();
 
         using (CorrelationContext.Push(correlationId))
         {
             // Act
-            _enricher.Enrich(logEvent, _propertyFactoryMock.Object);
+            _enriquecedor.Enrich(eventoLog, _factoryPropriedadesMock.Object);
 
             // Assert
-            logEvent.Properties.Should().ContainKey(CorrelationConstants.LogPropertyName);
-            var property = logEvent.Properties[CorrelationConstants.LogPropertyName];
-            property.Should().BeOfType<ScalarValue>();
-            ((ScalarValue)property).Value.Should().Be(correlationId);
+            eventoLog.Properties.Should().ContainKey(CorrelationConstants.LogPropertyName);
+            var propriedade = eventoLog.Properties[CorrelationConstants.LogPropertyName];
+            propriedade.Should().BeOfType<ScalarValue>();
+            ((ScalarValue)propriedade).Value.Should().Be(correlationId);
         }
     }
 
-    [Fact]
-    public void Enrich_ShouldNotAddProperty_WhenContextIsEmpty()
+    [Fact(DisplayName = "Enrich não deve adicionar propriedade quando contexto está vazio")]
+    public void Enrich_NaoDeveAdicionarPropriedade_QuandoContextoEstaVazio()
     {
         // Arrange
-        var logEvent = CreateLogEvent();
+        var eventoLog = CriarEventoLog();
 
         // Act
-        _enricher.Enrich(logEvent, _propertyFactoryMock.Object);
+        _enriquecedor.Enrich(eventoLog, _factoryPropriedadesMock.Object);
 
         // Assert
-        logEvent.Properties.Should().NotContainKey(CorrelationConstants.LogPropertyName);
+        eventoLog.Properties.Should().NotContainKey(CorrelationConstants.LogPropertyName);
     }
 
-    [Fact]
-    public void Enrich_ShouldNotAddProperty_WhenContextIsNull()
+    [Fact(DisplayName = "Enrich não deve adicionar propriedade quando contexto é null")]
+    public void Enrich_NaoDeveAdicionarPropriedade_QuandoContextoEhNull()
     {
         // Arrange
-        var logEvent = CreateLogEvent();
-        // CorrelationContext.Current is null by default
+        var eventoLog = CriarEventoLog();
+        // CorrelationContext.Current é null por padrão
 
         // Act
-        _enricher.Enrich(logEvent, _propertyFactoryMock.Object);
+        _enriquecedor.Enrich(eventoLog, _factoryPropriedadesMock.Object);
 
         // Assert
-        logEvent.Properties.Should().NotContainKey(CorrelationConstants.LogPropertyName);
+        eventoLog.Properties.Should().NotContainKey(CorrelationConstants.LogPropertyName);
     }
 
-    [Fact]
-    public void Enrich_ShouldNotDuplicateProperty_WhenPropertyAlreadyExists()
+    [Fact(DisplayName = "Enrich não deve duplicar propriedade quando propriedade já existe")]
+    public void Enrich_NaoDeveDuplicarPropriedade_QuandoPropriedadeJaExiste()
     {
         // Arrange
-        var existingCorrelationId = "existing-id";
-        var newCorrelationId = "new-id";
+        var correlationIdExistente = "existing-id";
+        var novoCorrelationId = "new-id";
         
-        var logEvent = CreateLogEvent();
-        logEvent.AddPropertyIfAbsent(new LogEventProperty(
+        var eventoLog = CriarEventoLog();
+        eventoLog.AddPropertyIfAbsent(new LogEventProperty(
             CorrelationConstants.LogPropertyName,
-            new ScalarValue(existingCorrelationId)));
+            new ScalarValue(correlationIdExistente)));
 
-        using (CorrelationContext.Push(newCorrelationId))
+        using (CorrelationContext.Push(novoCorrelationId))
         {
             // Act
-            _enricher.Enrich(logEvent, _propertyFactoryMock.Object);
+            _enriquecedor.Enrich(eventoLog, _factoryPropriedadesMock.Object);
 
             // Assert
-            logEvent.Properties.Should().ContainKey(CorrelationConstants.LogPropertyName);
-            var property = logEvent.Properties[CorrelationConstants.LogPropertyName];
-            ((ScalarValue)property).Value.Should().Be(existingCorrelationId);
+            eventoLog.Properties.Should().ContainKey(CorrelationConstants.LogPropertyName);
+            var propriedade = eventoLog.Properties[CorrelationConstants.LogPropertyName];
+            ((ScalarValue)propriedade).Value.Should().Be(correlationIdExistente);
         }
     }
 
-    [Fact]
-    public void Enrich_ShouldNotAddProperty_WhenCorrelationIdIsEmptyString()
+    [Fact(DisplayName = "Enrich não deve adicionar propriedade quando CorrelationId é string vazia")]
+    public void Enrich_NaoDeveAdicionarPropriedade_QuandoCorrelationIdEhStringVazia()
     {
         // Arrange
-        var logEvent = CreateLogEvent();
+        var eventoLog = CriarEventoLog();
 
         using (CorrelationContext.Push(""))
         {
             // Act
-            _enricher.Enrich(logEvent, _propertyFactoryMock.Object);
+            _enriquecedor.Enrich(eventoLog, _factoryPropriedadesMock.Object);
 
             // Assert
-            logEvent.Properties.Should().NotContainKey(CorrelationConstants.LogPropertyName);
+            eventoLog.Properties.Should().NotContainKey(CorrelationConstants.LogPropertyName);
         }
     }
 
-    [Fact]
-    public void Enrich_ShouldAddPropertyWithCorrectName()
+    [Fact(DisplayName = "Enrich deve adicionar propriedade com nome correto")]
+    public void Enrich_DeveAdicionarPropriedadeComNomeCorreto()
     {
         // Arrange
         var correlationId = "test-id";
-        var logEvent = CreateLogEvent();
+        var eventoLog = CriarEventoLog();
 
         using (CorrelationContext.Push(correlationId))
         {
             // Act
-            _enricher.Enrich(logEvent, _propertyFactoryMock.Object);
+            _enriquecedor.Enrich(eventoLog, _factoryPropriedadesMock.Object);
 
             // Assert
-            logEvent.Properties.Should().ContainKey("CorrelationId");
+            eventoLog.Properties.Should().ContainKey("CorrelationId");
         }
     }
 
-    [Fact]
-    public void Enrich_ShouldUseScalarValue_ForCorrelationIdProperty()
+    [Fact(DisplayName = "Enrich deve usar ScalarValue para propriedade CorrelationId")]
+    public void Enrich_DeveUsarScalarValue_ParaPropriedadeCorrelationId()
     {
         // Arrange
         var correlationId = "test-id-with-special-chars-!@#$";
-        var logEvent = CreateLogEvent();
+        var eventoLog = CriarEventoLog();
 
         using (CorrelationContext.Push(correlationId))
         {
             // Act
-            _enricher.Enrich(logEvent, _propertyFactoryMock.Object);
+            _enriquecedor.Enrich(eventoLog, _factoryPropriedadesMock.Object);
 
             // Assert
-            logEvent.Properties[CorrelationConstants.LogPropertyName].Should().BeOfType<ScalarValue>();
+            eventoLog.Properties[CorrelationConstants.LogPropertyName].Should().BeOfType<ScalarValue>();
         }
     }
 
-    [Fact]
-    public void Enrich_ShouldWorkWithMultipleLogEvents()
+    [Fact(DisplayName = "Enrich deve funcionar com múltiplos eventos de log")]
+    public void Enrich_DeveFuncionarComMultiplosEventosDeLog()
     {
         // Arrange
-        var correlationId = "shared-correlation-id";
-        var logEvent1 = CreateLogEvent();
-        var logEvent2 = CreateLogEvent();
+        var correlationIdCompartilhado = "shared-correlation-id";
+        var eventoLog1 = CriarEventoLog();
+        var eventoLog2 = CriarEventoLog();
 
-        using (CorrelationContext.Push(correlationId))
+        using (CorrelationContext.Push(correlationIdCompartilhado))
         {
             // Act
-            _enricher.Enrich(logEvent1, _propertyFactoryMock.Object);
-            _enricher.Enrich(logEvent2, _propertyFactoryMock.Object);
+            _enriquecedor.Enrich(eventoLog1, _factoryPropriedadesMock.Object);
+            _enriquecedor.Enrich(eventoLog2, _factoryPropriedadesMock.Object);
 
             // Assert
-            logEvent1.Properties[CorrelationConstants.LogPropertyName].Should().BeOfType<ScalarValue>();
-            ((ScalarValue)logEvent1.Properties[CorrelationConstants.LogPropertyName]).Value.Should().Be(correlationId);
+            eventoLog1.Properties[CorrelationConstants.LogPropertyName].Should().BeOfType<ScalarValue>();
+            ((ScalarValue)eventoLog1.Properties[CorrelationConstants.LogPropertyName]).Value.Should().Be(correlationIdCompartilhado);
             
-            logEvent2.Properties[CorrelationConstants.LogPropertyName].Should().BeOfType<ScalarValue>();
-            ((ScalarValue)logEvent2.Properties[CorrelationConstants.LogPropertyName]).Value.Should().Be(correlationId);
+            eventoLog2.Properties[CorrelationConstants.LogPropertyName].Should().BeOfType<ScalarValue>();
+            ((ScalarValue)eventoLog2.Properties[CorrelationConstants.LogPropertyName]).Value.Should().Be(correlationIdCompartilhado);
         }
     }
 
-    private static LogEvent CreateLogEvent()
+    private static LogEvent CriarEventoLog()
     {
         return new LogEvent(
             DateTimeOffset.UtcNow,

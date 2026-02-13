@@ -5,18 +5,18 @@ namespace Tests.Infrastructure.Monitoramento.Correlation;
 
 public class CorrelationContextTests
 {
-    [Fact]
-    public void Current_ShouldReturnNull_WhenNoCorrelationIdIsSet()
+    [Fact(DisplayName = "Current deve retornar null quando nenhum CorrelationId está definido")]
+    public void Current_DeveRetornarNull_QuandoNenhumCorrelationIdEstaDefinido()
     {
         // Arrange & Act
-        var current = CorrelationContext.Current;
+        var valorAtual = CorrelationContext.Current;
 
         // Assert
-        current.Should().BeNull();
+        valorAtual.Should().BeNull();
     }
 
-    [Fact]
-    public void Push_ShouldSetCurrentCorrelationId()
+    [Fact(DisplayName = "Push deve definir o CorrelationId atual")]
+    public void Push_DeveDefinirCorrelationIdAtual()
     {
         // Arrange
         var correlationId = "test-correlation-id-123";
@@ -29,33 +29,33 @@ public class CorrelationContextTests
         }
     }
 
-    [Fact]
-    public void Push_ShouldRestorePreviousValue_WhenDisposed()
+    [Fact(DisplayName = "Push deve restaurar o valor anterior quando descartado")]
+    public void Push_DeveRestaurarValorAnterior_QuandoDescartado()
     {
         // Arrange
-        var firstId = "first-id";
-        var secondId = "second-id";
+        var primeiroId = "first-id";
+        var segundoId = "second-id";
 
         // Act
-        using (CorrelationContext.Push(firstId))
+        using (CorrelationContext.Push(primeiroId))
         {
-            CorrelationContext.Current.Should().Be(firstId);
+            CorrelationContext.Current.Should().Be(primeiroId);
 
-            using (CorrelationContext.Push(secondId))
+            using (CorrelationContext.Push(segundoId))
             {
-                CorrelationContext.Current.Should().Be(secondId);
+                CorrelationContext.Current.Should().Be(segundoId);
             }
 
-            // Assert - should restore to firstId after inner scope
-            CorrelationContext.Current.Should().Be(firstId);
+            // Assert - deve restaurar para primeiroId após o escopo interno
+            CorrelationContext.Current.Should().Be(primeiroId);
         }
 
-        // Assert - should restore to null after outer scope
+        // Assert - deve restaurar para null após o escopo externo
         CorrelationContext.Current.Should().BeNull();
     }
 
-    [Fact]
-    public void Push_ShouldSupportNesting()
+    [Fact(DisplayName = "Push deve suportar aninhamento")]
+    public void Push_DeveSuportarAninhamento()
     {
         // Arrange
         var id1 = "id-1";
@@ -87,38 +87,38 @@ public class CorrelationContextTests
         CorrelationContext.Current.Should().BeNull();
     }
 
-    [Fact]
-    public void Push_ShouldHandleEmptyString()
+    [Fact(DisplayName = "Push deve lidar com string vazia")]
+    public void Push_DeveLidarComStringVazia()
     {
         // Arrange
-        var emptyId = "";
+        var idVazio = "";
 
         // Act
-        using (CorrelationContext.Push(emptyId))
+        using (CorrelationContext.Push(idVazio))
         {
             // Assert
-            CorrelationContext.Current.Should().Be(emptyId);
+            CorrelationContext.Current.Should().Be(idVazio);
         }
 
         CorrelationContext.Current.Should().BeNull();
     }
 
-    [Fact]
-    public void Push_ShouldBeThreadSafe_WithAsyncLocal()
+    [Fact(DisplayName = "Push deve ser thread-safe com AsyncLocal")]
+    public void Push_DeveSerThreadSafe_ComAsyncLocal()
     {
         // Arrange
         var id1 = "thread-1-id";
         var id2 = "thread-2-id";
-        var task1Result = "";
-        var task2Result = "";
+        var resultadoTask1 = "";
+        var resultadoTask2 = "";
 
         // Act
         var task1 = Task.Run(() =>
         {
             using (CorrelationContext.Push(id1))
             {
-                Thread.Sleep(50); // Simulate some work
-                task1Result = CorrelationContext.Current ?? "";
+                Thread.Sleep(50); // Simula algum trabalho
+                resultadoTask1 = CorrelationContext.Current ?? "";
             }
         });
 
@@ -126,54 +126,54 @@ public class CorrelationContextTests
         {
             using (CorrelationContext.Push(id2))
             {
-                Thread.Sleep(50); // Simulate some work
-                task2Result = CorrelationContext.Current ?? "";
+                Thread.Sleep(50); // Simula algum trabalho
+                resultadoTask2 = CorrelationContext.Current ?? "";
             }
         });
 
         Task.WaitAll(task1, task2);
 
-        // Assert - each task should have seen its own correlation ID
-        task1Result.Should().Be(id1);
-        task2Result.Should().Be(id2);
+        // Assert - cada task deve ter visto seu próprio correlation ID
+        resultadoTask1.Should().Be(id1);
+        resultadoTask2.Should().Be(id2);
         CorrelationContext.Current.Should().BeNull();
     }
 
-    [Fact]
-    public void Current_ShouldReturnCorrectValue_InDifferentScopes()
+    [Fact(DisplayName = "Current deve retornar o valor correto em escopos diferentes")]
+    public void Current_DeveRetornarValorCorreto_EmEscoposDiferentes()
     {
         // Arrange
-        var outerScopeId = "outer-scope";
-        var innerScopeId = "inner-scope";
+        var idEscopoExterno = "outer-scope";
+        var idEscopoInterno = "inner-scope";
 
         // Act & Assert
         CorrelationContext.Current.Should().BeNull();
 
-        using (var outerScope = CorrelationContext.Push(outerScopeId))
+        using (var escopoExterno = CorrelationContext.Push(idEscopoExterno))
         {
-            CorrelationContext.Current.Should().Be(outerScopeId);
+            CorrelationContext.Current.Should().Be(idEscopoExterno);
 
-            using (var innerScope = CorrelationContext.Push(innerScopeId))
+            using (var escopoInterno = CorrelationContext.Push(idEscopoInterno))
             {
-                CorrelationContext.Current.Should().Be(innerScopeId);
+                CorrelationContext.Current.Should().Be(idEscopoInterno);
             }
 
-            CorrelationContext.Current.Should().Be(outerScopeId);
+            CorrelationContext.Current.Should().Be(idEscopoExterno);
         }
 
         CorrelationContext.Current.Should().BeNull();
     }
 
-    [Fact]
-    public void Dispose_ShouldBeIdempotent()
+    [Fact(DisplayName = "Dispose deve ser idempotente")]
+    public void Dispose_DeveSerIdempotente()
     {
         // Arrange
         var correlationId = "test-id";
-        var scope = CorrelationContext.Push(correlationId);
+        var escopo = CorrelationContext.Push(correlationId);
 
         // Act
-        scope.Dispose();
-        scope.Dispose(); // Second dispose should not throw
+        escopo.Dispose();
+        escopo.Dispose(); // Segundo dispose não deve lançar exceção
 
         // Assert
         CorrelationContext.Current.Should().BeNull();
