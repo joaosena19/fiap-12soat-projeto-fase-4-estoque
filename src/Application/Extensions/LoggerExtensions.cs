@@ -1,4 +1,5 @@
 using Application.Contracts.Monitoramento;
+using Application.Extensions.Enums;
 using Application.Identidade.Services;
 using Shared.Exceptions;
 
@@ -23,5 +24,13 @@ public static class LoggerExtensions
     public static IAppLogger ComDomainErrorType(this IAppLogger logger, DomainException ex)
     {
         return logger.ComPropriedade("DomainErrorType", ex.ErrorType);
+    }
+
+    public static IAppLogger ComMensageria(this IAppLogger logger, NomeMensagemEnum nomeMensagem, TipoMensagemEnum tipo)
+    {
+        return logger
+            .ComPropriedade("Mensagem_Nome", nomeMensagem.ToString())
+            .ComPropriedade("Mensagem_Tipo", tipo.ToString())
+            .ComPropriedade("Eh_Mensageria", true);
     }
 }

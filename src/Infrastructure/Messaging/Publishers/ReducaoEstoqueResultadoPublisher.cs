@@ -1,3 +1,6 @@
+using Application.Contracts.Monitoramento;
+using Application.Extensions;
+using Application.Extensions.Enums;
 using Infrastructure.Messaging.DTOs;
 using MassTransit;
 
@@ -13,12 +16,17 @@ public class ReducaoEstoqueResultadoPublisher : IReducaoEstoqueResultadoPublishe
     /// <summary>
     /// Publica uma mensagem de resultado de redução de estoque com sucesso.
     /// </summary>
+    /// <param name="logger">Logger para registrar a publicação</param>
     /// <param name="context">Contexto de consumo do MassTransit para publicação</param>
     /// <param name="correlationId">ID de correlação da saga</param>
     /// <param name="ordemServicoId">ID da ordem de serviço</param>
     /// <returns>Task representando a operação assíncrona</returns>
-    public async Task PublicarSucessoAsync(ConsumeContext context, Guid correlationId, Guid ordemServicoId)
+    public async Task PublicarSucessoAsync(IAppLogger logger, ConsumeContext context, Guid correlationId, Guid ordemServicoId)
     {
+        logger
+            .ComMensageria(NomeMensagemEnum.ReducaoEstoqueResultado, TipoMensagemEnum.Publicacao)
+            .LogInformation("Publicando resultado de sucesso da redução de estoque para OS {OrdemServicoId}. CorrelationId: {CorrelationId}", ordemServicoId, correlationId);
+
         await context.Publish(new ReducaoEstoqueResultado
         {
             CorrelationId = correlationId,
@@ -30,13 +38,18 @@ public class ReducaoEstoqueResultadoPublisher : IReducaoEstoqueResultadoPublishe
     /// <summary>
     /// Publica uma mensagem de resultado de redução de estoque com falha.
     /// </summary>
+    /// <param name="logger">Logger para registrar a publicação</param>
     /// <param name="context">Contexto de consumo do MassTransit para publicação</param>
     /// <param name="correlationId">ID de correlação da saga</param>
     /// <param name="ordemServicoId">ID da ordem de serviço</param>
     /// <param name="motivoFalha">Motivo da falha na redução</param>
     /// <returns>Task representando a operação assíncrona</returns>
-    public async Task PublicarFalhaAsync(ConsumeContext context, Guid correlationId, Guid ordemServicoId, string motivoFalha)
+    public async Task PublicarFalhaAsync(IAppLogger logger, ConsumeContext context, Guid correlationId, Guid ordemServicoId, string motivoFalha)
     {
+        logger
+            .ComMensageria(NomeMensagemEnum.ReducaoEstoqueResultado, TipoMensagemEnum.Publicacao)
+            .LogWarning("Publicando resultado de falha da redução de estoque para OS {OrdemServicoId}. Motivo: {MotivoFalha}. CorrelationId: {CorrelationId}", ordemServicoId, motivoFalha, correlationId);
+
         await context.Publish(new ReducaoEstoqueResultado
         {
             CorrelationId = correlationId,

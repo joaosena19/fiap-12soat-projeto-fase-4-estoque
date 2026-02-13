@@ -107,4 +107,55 @@ public static class ConsumeContextMockExtensions
             $"(CorrelationId: {correlationId}, OrdemServicoId: {ordemServicoId}, Sucesso: false, MotivoFalha: '{motivoFalha}')."
         );
     }
+
+    // Sobrecarga para ConsumeContext sem tipo genérico (usado em testes do Publisher)
+    
+    /// <summary>
+    /// Verifica se foi publicado um ReducaoEstoqueResultado indicando sucesso na operação.
+    /// </summary>
+    /// <param name="mock">Mock do ConsumeContext</param>
+    /// <param name="correlationId">ID de correlação esperado</param>
+    /// <param name="ordemServicoId">ID da ordem de serviço esperado</param>
+    public static void DeveTerPublicadoReducaoEstoqueResultadoSucesso(this Mock<ConsumeContext> mock, Guid correlationId, Guid ordemServicoId)
+    {
+        mock.Verify(
+            x => x.Publish(
+                It.Is<ReducaoEstoqueResultado>(r =>
+                    r.CorrelationId == correlationId &&
+                    r.OrdemServicoId == ordemServicoId &&
+                    r.Sucesso == true &&
+                    r.MotivoFalha == null
+                ),
+                It.IsAny<CancellationToken>()
+            ),
+            Times.Once,
+            $"Era esperado que fosse publicado um ReducaoEstoqueResultado com sucesso exatamente uma vez " +
+            $"(CorrelationId: {correlationId}, OrdemServicoId: {ordemServicoId}, Sucesso: true, MotivoFalha: null)."
+        );
+    }
+
+    /// <summary>
+    /// Verifica se foi publicado um ReducaoEstoqueResultado indicando falha na operação.
+    /// </summary>
+    /// <param name="mock">Mock do ConsumeContext</param>
+    /// <param name="correlationId">ID de correlação esperado</param>
+    /// <param name="ordemServicoId">ID da ordem de serviço esperado</param>
+    /// <param name="motivoFalha">Motivo da falha esperado</param>
+    public static void DeveTerPublicadoReducaoEstoqueResultadoFalha(this Mock<ConsumeContext> mock, Guid correlationId, Guid ordemServicoId, string motivoFalha)
+    {
+        mock.Verify(
+            x => x.Publish(
+                It.Is<ReducaoEstoqueResultado>(r =>
+                    r.CorrelationId == correlationId &&
+                    r.OrdemServicoId == ordemServicoId &&
+                    r.Sucesso == false &&
+                    r.MotivoFalha == motivoFalha
+                ),
+                It.IsAny<CancellationToken>()
+            ),
+            Times.Once,
+            $"Era esperado que fosse publicado um ReducaoEstoqueResultado com falha exatamente uma vez " +
+            $"(CorrelationId: {correlationId}, OrdemServicoId: {ordemServicoId}, Sucesso: false, MotivoFalha: '{motivoFalha}')."
+        );
+    }
 }

@@ -1,3 +1,4 @@
+using Application.Contracts.Monitoramento;
 using FluentAssertions;
 using Infrastructure.Messaging.DTOs;
 using Infrastructure.Messaging.Publishers;
@@ -20,25 +21,18 @@ public class ReducaoEstoqueResultadoPublisherTests
     {
         // Arrange
         var contextMock = new Mock<ConsumeContext>();
+        var loggerMock = new Mock<IAppLogger>();
+        loggerMock.Setup(x => x.ComPropriedade(It.IsAny<string>(), It.IsAny<object>())).Returns(loggerMock.Object);
+
         var publisher = new ReducaoEstoqueResultadoPublisher();
         var correlationId = Guid.NewGuid();
         var ordemServicoId = Guid.NewGuid();
 
         // Act
-        await publisher.PublicarSucessoAsync(contextMock.Object, correlationId, ordemServicoId);
+        await publisher.PublicarSucessoAsync(loggerMock.Object, contextMock.Object, correlationId, ordemServicoId);
 
         // Assert
-        contextMock.Verify(
-            x => x.Publish(
-                It.Is<ReducaoEstoqueResultado>(r =>
-                    r.Sucesso == true &&
-                    r.MotivoFalha == null
-                ),
-                It.IsAny<CancellationToken>()
-            ),
-            Times.Once,
-            "Era esperado que fosse publicado um ReducaoEstoqueResultado com Sucesso=true e MotivoFalha=null exatamente uma vez."
-        );
+        contextMock.DeveTerPublicadoReducaoEstoqueResultadoSucesso(correlationId, ordemServicoId);
     }
 
     [Fact(DisplayName = "PublicarSucessoAsync quando chamado deve propagar CorrelationId e OrdemServicoId")]
@@ -47,6 +41,9 @@ public class ReducaoEstoqueResultadoPublisherTests
     {
         // Arrange
         var contextMock = new Mock<ConsumeContext>();
+        var loggerMock = new Mock<IAppLogger>();
+        loggerMock.Setup(x => x.ComPropriedade(It.IsAny<string>(), It.IsAny<object>())).Returns(loggerMock.Object);
+
         var publisher = new ReducaoEstoqueResultadoPublisher();
         var correlationId = Guid.Parse("11111111-1111-1111-1111-111111111111");
         var ordemServicoId = Guid.Parse("22222222-2222-2222-2222-222222222222");
@@ -55,7 +52,7 @@ public class ReducaoEstoqueResultadoPublisherTests
         contextMock.AoPublicar<ReducaoEstoqueResultado>().CapturaMensagem(msg => capturedMessage = msg);
 
         // Act
-        await publisher.PublicarSucessoAsync(contextMock.Object, correlationId, ordemServicoId);
+        await publisher.PublicarSucessoAsync(loggerMock.Object, contextMock.Object, correlationId, ordemServicoId);
 
         // Assert
         capturedMessage.Should().NotBeNull("uma mensagem deveria ter sido publicada");
@@ -69,25 +66,19 @@ public class ReducaoEstoqueResultadoPublisherTests
     {
         // Arrange
         var contextMock = new Mock<ConsumeContext>();
+        var loggerMock = new Mock<IAppLogger>();
+        loggerMock.Setup(x => x.ComPropriedade(It.IsAny<string>(), It.IsAny<object>())).Returns(loggerMock.Object);
+
         var publisher = new ReducaoEstoqueResultadoPublisher();
         var correlationId = Guid.NewGuid();
         var ordemServicoId = Guid.NewGuid();
         var motivoFalha = "estoque_insuficiente";
 
         // Act
-        await publisher.PublicarFalhaAsync(contextMock.Object, correlationId, ordemServicoId, motivoFalha);
+        await publisher.PublicarFalhaAsync(loggerMock.Object, contextMock.Object, correlationId, ordemServicoId, motivoFalha);
 
         // Assert
-        contextMock.Verify(
-            x => x.Publish(
-                It.Is<ReducaoEstoqueResultado>(r =>
-                    r.Sucesso == false
-                ),
-                It.IsAny<CancellationToken>()
-            ),
-            Times.Once,
-            "Era esperado que fosse publicado um ReducaoEstoqueResultado com Sucesso=false exatamente uma vez."
-        );
+        contextMock.DeveTerPublicadoReducaoEstoqueResultadoFalha(correlationId, ordemServicoId, motivoFalha);
     }
 
     [Fact(DisplayName = "PublicarFalhaAsync quando chamado deve incluir MotivoFalha")]
@@ -96,6 +87,9 @@ public class ReducaoEstoqueResultadoPublisherTests
     {
         // Arrange
         var contextMock = new Mock<ConsumeContext>();
+        var loggerMock = new Mock<IAppLogger>();
+        loggerMock.Setup(x => x.ComPropriedade(It.IsAny<string>(), It.IsAny<object>())).Returns(loggerMock.Object);
+
         var publisher = new ReducaoEstoqueResultadoPublisher();
         var correlationId = Guid.NewGuid();
         var ordemServicoId = Guid.NewGuid();
@@ -105,7 +99,7 @@ public class ReducaoEstoqueResultadoPublisherTests
         contextMock.AoPublicar<ReducaoEstoqueResultado>().CapturaMensagem(msg => capturedMessage = msg);
 
         // Act
-        await publisher.PublicarFalhaAsync(contextMock.Object, correlationId, ordemServicoId, motivoFalha);
+        await publisher.PublicarFalhaAsync(loggerMock.Object, contextMock.Object, correlationId, ordemServicoId, motivoFalha);
 
         // Assert
         capturedMessage.Should().NotBeNull("uma mensagem deveria ter sido publicada");
@@ -119,6 +113,9 @@ public class ReducaoEstoqueResultadoPublisherTests
     {
         // Arrange
         var contextMock = new Mock<ConsumeContext>();
+        var loggerMock = new Mock<IAppLogger>();
+        loggerMock.Setup(x => x.ComPropriedade(It.IsAny<string>(), It.IsAny<object>())).Returns(loggerMock.Object);
+
         var publisher = new ReducaoEstoqueResultadoPublisher();
         var correlationId = Guid.Parse("33333333-3333-3333-3333-333333333333");
         var ordemServicoId = Guid.Parse("44444444-4444-4444-4444-444444444444");
@@ -128,7 +125,7 @@ public class ReducaoEstoqueResultadoPublisherTests
         contextMock.AoPublicar<ReducaoEstoqueResultado>().CapturaMensagem(msg => capturedMessage = msg);
 
         // Act
-        await publisher.PublicarFalhaAsync(contextMock.Object, correlationId, ordemServicoId, motivoFalha);
+        await publisher.PublicarFalhaAsync(loggerMock.Object, contextMock.Object, correlationId, ordemServicoId, motivoFalha);
 
         // Assert
         capturedMessage.Should().NotBeNull("uma mensagem deveria ter sido publicada");
