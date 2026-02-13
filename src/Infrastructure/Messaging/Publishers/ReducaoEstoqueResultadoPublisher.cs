@@ -21,11 +21,11 @@ public class ReducaoEstoqueResultadoPublisher : IReducaoEstoqueResultadoPublishe
     /// <param name="correlationId">ID de correlação da saga</param>
     /// <param name="ordemServicoId">ID da ordem de serviço</param>
     /// <returns>Task representando a operação assíncrona</returns>
-    public async Task PublicarSucessoAsync(IAppLogger logger, ConsumeContext context, Guid correlationId, Guid ordemServicoId)
+    public async Task PublicarSucessoAsync(IAppLogger logger, ConsumeContext context, string correlationId, Guid ordemServicoId)
     {
         logger
             .ComMensageria(NomeMensagemEnum.ReducaoEstoqueResultado, TipoMensagemEnum.Publicacao)
-            .LogInformation("Publicando resultado de sucesso da redução de estoque para OS {OrdemServicoId}. CorrelationId: {CorrelationId}", ordemServicoId, correlationId);
+            .LogInformation("Publicando resultado de sucesso da redução de estoque para OS {OrdemServicoId}", ordemServicoId);
 
         await context.Publish(new ReducaoEstoqueResultado
         {
@@ -44,11 +44,11 @@ public class ReducaoEstoqueResultadoPublisher : IReducaoEstoqueResultadoPublishe
     /// <param name="ordemServicoId">ID da ordem de serviço</param>
     /// <param name="motivoFalha">Motivo da falha na redução</param>
     /// <returns>Task representando a operação assíncrona</returns>
-    public async Task PublicarFalhaAsync(IAppLogger logger, ConsumeContext context, Guid correlationId, Guid ordemServicoId, string motivoFalha)
+    public async Task PublicarFalhaAsync(IAppLogger logger, ConsumeContext context, string correlationId, Guid ordemServicoId, string motivoFalha)
     {
         logger
             .ComMensageria(NomeMensagemEnum.ReducaoEstoqueResultado, TipoMensagemEnum.Publicacao)
-            .LogWarning("Publicando resultado de falha da redução de estoque para OS {OrdemServicoId}. Motivo: {MotivoFalha}. CorrelationId: {CorrelationId}", ordemServicoId, motivoFalha, correlationId);
+            .LogWarning("Publicando resultado de falha da redução de estoque para OS {OrdemServicoId}. Motivo: {MotivoFalha}", ordemServicoId, motivoFalha);
 
         await context.Publish(new ReducaoEstoqueResultado
         {

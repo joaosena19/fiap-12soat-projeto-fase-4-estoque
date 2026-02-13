@@ -65,7 +65,7 @@ public static class ConsumeContextMockExtensions
     /// <param name="mock">Mock do ConsumeContext</param>
     /// <param name="correlationId">ID de correlação esperado</param>
     /// <param name="ordemServicoId">ID da ordem de serviço esperado</param>
-    public static void DeveTerPublicadoReducaoEstoqueResultadoSucesso(this Mock<ConsumeContext<ReducaoEstoqueSolicitacao>> mock, Guid correlationId, Guid ordemServicoId)
+    public static void DeveTerPublicadoReducaoEstoqueResultadoSucesso(this Mock<ConsumeContext<ReducaoEstoqueSolicitacao>> mock, string correlationId, Guid ordemServicoId)
     {
         mock.Verify(
             x => x.Publish(
@@ -90,7 +90,7 @@ public static class ConsumeContextMockExtensions
     /// <param name="correlationId">ID de correlação esperado</param>
     /// <param name="ordemServicoId">ID da ordem de serviço esperado</param>
     /// <param name="motivoFalha">Motivo da falha esperado</param>
-    public static void DeveTerPublicadoReducaoEstoqueResultadoFalha(this Mock<ConsumeContext<ReducaoEstoqueSolicitacao>> mock, Guid correlationId, Guid ordemServicoId, string motivoFalha)
+    public static void DeveTerPublicadoReducaoEstoqueResultadoFalha(this Mock<ConsumeContext<ReducaoEstoqueSolicitacao>> mock, string correlationId, Guid ordemServicoId, string motivoFalha)
     {
         mock.Verify(
             x => x.Publish(
@@ -116,7 +116,7 @@ public static class ConsumeContextMockExtensions
     /// <param name="mock">Mock do ConsumeContext</param>
     /// <param name="correlationId">ID de correlação esperado</param>
     /// <param name="ordemServicoId">ID da ordem de serviço esperado</param>
-    public static void DeveTerPublicadoReducaoEstoqueResultadoSucesso(this Mock<ConsumeContext> mock, Guid correlationId, Guid ordemServicoId)
+    public static void DeveTerPublicadoReducaoEstoqueResultadoSucesso(this Mock<ConsumeContext> mock, string correlationId, Guid ordemServicoId)
     {
         mock.Verify(
             x => x.Publish(
@@ -141,7 +141,7 @@ public static class ConsumeContextMockExtensions
     /// <param name="correlationId">ID de correlação esperado</param>
     /// <param name="ordemServicoId">ID da ordem de serviço esperado</param>
     /// <param name="motivoFalha">Motivo da falha esperado</param>
-    public static void DeveTerPublicadoReducaoEstoqueResultadoFalha(this Mock<ConsumeContext> mock, Guid correlationId, Guid ordemServicoId, string motivoFalha)
+    public static void DeveTerPublicadoReducaoEstoqueResultadoFalha(this Mock<ConsumeContext> mock, string correlationId, Guid ordemServicoId, string motivoFalha)
     {
         mock.Verify(
             x => x.Publish(

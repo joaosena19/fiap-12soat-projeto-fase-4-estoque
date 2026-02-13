@@ -17,7 +17,7 @@ public interface IReducaoEstoqueResultadoPublisher
     /// <param name="correlationId">ID de correlação da saga</param>
     /// <param name="ordemServicoId">ID da ordem de serviço</param>
     /// <returns>Task representando a operação assíncrona</returns>
-    Task PublicarSucessoAsync(IAppLogger logger, ConsumeContext context, Guid correlationId, Guid ordemServicoId);
+    Task PublicarSucessoAsync(IAppLogger logger, ConsumeContext context, string correlationId, Guid ordemServicoId);
 
     /// <summary>
     /// Publica uma mensagem de resultado de redução de estoque com falha.
@@ -28,5 +28,5 @@ public interface IReducaoEstoqueResultadoPublisher
     /// <param name="ordemServicoId">ID da ordem de serviço</param>
     /// <param name="motivoFalha">Motivo da falha na redução</param>
     /// <returns>Task representando a operação assíncrona</returns>
-    Task PublicarFalhaAsync(IAppLogger logger, ConsumeContext context, Guid correlationId, Guid ordemServicoId, string motivoFalha);
+    Task PublicarFalhaAsync(IAppLogger logger, ConsumeContext context, string correlationId, Guid ordemServicoId, string motivoFalha);
 }

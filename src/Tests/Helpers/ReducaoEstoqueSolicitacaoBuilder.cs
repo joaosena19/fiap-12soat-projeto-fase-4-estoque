@@ -8,11 +8,11 @@ namespace Tests.Helpers;
 /// </summary>
 public class ReducaoEstoqueSolicitacaoBuilder
 {
-    private Guid _correlationId = Guid.NewGuid();
+    private string _correlationId = Guid.NewGuid().ToString();
     private Guid _ordemServicoId = Guid.NewGuid();
     private List<ItemReducao> _itens = new();
 
-    public ReducaoEstoqueSolicitacaoBuilder ComCorrelationId(Guid correlationId)
+    public ReducaoEstoqueSolicitacaoBuilder ComCorrelationId(string correlationId)
     {
         _correlationId = correlationId;
         return this;

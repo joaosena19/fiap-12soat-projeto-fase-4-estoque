@@ -17,7 +17,7 @@ public class ReducaoEstoqueContractsTests
         // Arrange
         var solicitacao = new ReducaoEstoqueSolicitacao
         {
-            CorrelationId = Guid.NewGuid(),
+            CorrelationId = Guid.NewGuid().ToString(),
             OrdemServicoId = Guid.NewGuid(),
             Itens = new List<ItemReducao>
             {
@@ -44,7 +44,7 @@ public class ReducaoEstoqueContractsTests
     public void ReducaoEstoqueSolicitacao_WhenDeserializedFromJson_ShouldHaveCorrectValues()
     {
         // Arrange
-        var correlationId = Guid.NewGuid();
+        var correlationId = Guid.NewGuid().ToString();
         var ordemServicoId = Guid.NewGuid();
         var itemId1 = Guid.NewGuid();
         var itemId2 = Guid.NewGuid();
@@ -88,7 +88,7 @@ public class ReducaoEstoqueContractsTests
         // Arrange
         var resultado = new ReducaoEstoqueResultado
         {
-            CorrelationId = Guid.NewGuid(),
+            CorrelationId = Guid.NewGuid().ToString(),
             OrdemServicoId = Guid.NewGuid(),
             Sucesso = true,
             MotivoFalha = null
@@ -113,7 +113,7 @@ public class ReducaoEstoqueContractsTests
         // Arrange
         var resultado = new ReducaoEstoqueResultado
         {
-            CorrelationId = Guid.NewGuid(),
+            CorrelationId = Guid.NewGuid().ToString(),
             OrdemServicoId = Guid.NewGuid(),
             Sucesso = false,
             MotivoFalha = "estoque_insuficiente"
@@ -136,7 +136,7 @@ public class ReducaoEstoqueContractsTests
     public void ReducaoEstoqueResultado_WhenDeserializedFromJson_ShouldHaveCorrectValues()
     {
         // Arrange
-        var correlationId = Guid.NewGuid();
+        var correlationId = Guid.NewGuid().ToString();
         var ordemServicoId = Guid.NewGuid();
         
         var json = @$"{{
@@ -191,7 +191,7 @@ public class ReducaoEstoqueContractsTests
         // Arrange
         var resultado = new ReducaoEstoqueResultado
         {
-            CorrelationId = Guid.NewGuid(),
+            CorrelationId = Guid.NewGuid().ToString(),
             OrdemServicoId = Guid.NewGuid(),
             Sucesso = false,
             MotivoFalha = motivoFalha
@@ -214,7 +214,7 @@ public class ReducaoEstoqueContractsTests
         // Arrange
         var solicitacao = new ReducaoEstoqueSolicitacao
         {
-            CorrelationId = Guid.NewGuid(),
+            CorrelationId = Guid.NewGuid().ToString(),
             OrdemServicoId = Guid.NewGuid(),
             Itens = new List<ItemReducao>()
         };

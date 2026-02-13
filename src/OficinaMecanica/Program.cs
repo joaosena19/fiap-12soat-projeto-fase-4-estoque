@@ -14,8 +14,9 @@ var configuration = new ConfigurationBuilder()
 var loggerConfig = new LoggerConfiguration()
     .ReadFrom.Configuration(configuration)
     .Enrich.FromLogContext()
+    .Enrich.With<Infrastructure.Monitoramento.Correlation.CorrelationIdEnricher>()
     .Enrich.WithNewRelicLogsInContext()
-    .WriteTo.Console();
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}");
 
 var licenseKey = configuration["NEW_RELIC_LICENSE_KEY"];
 var appName = configuration["NEW_RELIC_APP_NAME"] ?? "EstoqueService";
@@ -40,6 +41,7 @@ builder.Services.AddApiControllers();
 builder.Services.AddSwaggerDocumentation();
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddDatabase(builder.Configuration);
+builder.Services.AddMonitoring();
 builder.Services.AddMessaging(builder.Configuration);
 builder.Services.AddHealthChecks();
 

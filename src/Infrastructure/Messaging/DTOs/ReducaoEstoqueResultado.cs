@@ -10,7 +10,7 @@ public record ReducaoEstoqueResultado
     /// ID de correlação para rastreamento distribuído da saga.
     /// Deve corresponder ao CorrelationId da solicitação.
     /// </summary>
-    public Guid CorrelationId { get; init; }
+    public string CorrelationId { get; init; } = string.Empty;
 
     /// <summary>
     /// ID da ordem de serviço relacionada.

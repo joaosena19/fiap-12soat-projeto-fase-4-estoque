@@ -31,18 +31,15 @@ public class ReducaoEstoqueSolicitacaoConsumer : BaseConsumer, IConsumer<Reducao
 
         var msg = context.Message;
 
-        // Enriquecer todos os logs do consumer com o CorrelationId da mensagem
-        using (SerilogContext.PushProperty("CorrelationId", msg.CorrelationId))
-        {
-            await ProcessarMensagemAsync(gateway, publisher, logger, context, msg);
-        }
+        // O filter já estabeleceu o scope de CorrelationId automaticamente
+        await ProcessarMensagemAsync(gateway, publisher, logger, context, msg);
     }
 
     private async Task ProcessarMensagemAsync(ItemEstoqueRepository gateway, IReducaoEstoqueResultadoPublisher publisher, IAppLogger logger, ConsumeContext<ReducaoEstoqueSolicitacao> context, ReducaoEstoqueSolicitacao msg)
     {
         logger
             .ComMensageria(NomeMensagemEnum.ReducaoEstoqueSolicitacao, TipoMensagemEnum.Consumo)
-            .LogInformation("Recebida solicitação de redução de estoque para OS {OrdemServicoId}. CorrelationId: {CorrelationId}", msg.OrdemServicoId, msg.CorrelationId);
+            .LogInformation("Recebida solicitação de redução de estoque para OS {OrdemServicoId}", msg.OrdemServicoId);
 
         try
         {
@@ -56,10 +53,9 @@ public class ReducaoEstoqueSolicitacaoConsumer : BaseConsumer, IConsumer<Reducao
                     logger
                         .ComMensageria(NomeMensagemEnum.ReducaoEstoqueSolicitacao, TipoMensagemEnum.Consumo)
                         .LogWarning(
-                            "Item de estoque {ItemId} não encontrado para OS {OrdemServicoId}. CorrelationId: {CorrelationId}",
+                            "Item de estoque {ItemId} não encontrado para OS {OrdemServicoId}",
                             item.ItemEstoqueId,
-                            msg.OrdemServicoId,
-                            msg.CorrelationId);
+                            msg.OrdemServicoId);
 
                     await publisher.PublicarFalhaAsync(logger, context, msg.CorrelationId, msg.OrdemServicoId, "estoque_insuficiente");
                     return;
@@ -71,12 +67,11 @@ public class ReducaoEstoqueSolicitacaoConsumer : BaseConsumer, IConsumer<Reducao
                         .ComMensageria(NomeMensagemEnum.ReducaoEstoqueSolicitacao, TipoMensagemEnum.Consumo)
                         .LogWarning(
                             "Estoque insuficiente para item {ItemId} (necessário: {QuantidadeNecessaria}, disponível: {QuantidadeDisponivel}) " +
-                            "para OS {OrdemServicoId}. CorrelationId: {CorrelationId}",
+                            "para OS {OrdemServicoId}",
                             item.ItemEstoqueId,
                             item.Quantidade,
                             estoque.Quantidade.Valor,
-                            msg.OrdemServicoId,
-                            msg.CorrelationId);
+                            msg.OrdemServicoId);
 
                     await publisher.PublicarFalhaAsync(logger, context, msg.CorrelationId, msg.OrdemServicoId, "estoque_insuficiente");
                     return;
@@ -96,13 +91,11 @@ public class ReducaoEstoqueSolicitacaoConsumer : BaseConsumer, IConsumer<Reducao
                 logger
                     .ComMensageria(NomeMensagemEnum.ReducaoEstoqueSolicitacao, TipoMensagemEnum.Consumo)
                     .LogInformation(
-                        "Estoque do item {ItemId} reduzido em {Quantidade} unidades (novo total: {NovaQuantidade}). " +
-                        "OS {OrdemServicoId}, CorrelationId: {CorrelationId}",
+                        "Estoque do item {ItemId} reduzido em {Quantidade} unidades (novo total: {NovaQuantidade}) para OS {OrdemServicoId}",
                         item.ItemEstoqueId,
                         item.Quantidade,
                         novaQuantidade,
-                        msg.OrdemServicoId,
-                        msg.CorrelationId);
+                        msg.OrdemServicoId);
             }
 
             await publisher.PublicarSucessoAsync(logger, context, msg.CorrelationId, msg.OrdemServicoId);
@@ -110,9 +103,8 @@ public class ReducaoEstoqueSolicitacaoConsumer : BaseConsumer, IConsumer<Reducao
             logger
                 .ComMensageria(NomeMensagemEnum.ReducaoEstoqueSolicitacao, TipoMensagemEnum.Consumo)
                 .LogInformation(
-                    "Redução de estoque concluída com sucesso para OS {OrdemServicoId}. CorrelationId: {CorrelationId}",
-                    msg.OrdemServicoId,
-                    msg.CorrelationId);
+                    "Redução de estoque concluída com sucesso para OS {OrdemServicoId}",
+                    msg.OrdemServicoId);
         }
         catch (Exception ex)
         {
@@ -120,9 +112,8 @@ public class ReducaoEstoqueSolicitacaoConsumer : BaseConsumer, IConsumer<Reducao
                 .ComMensageria(NomeMensagemEnum.ReducaoEstoqueSolicitacao, TipoMensagemEnum.Consumo)
                 .LogError(
                     ex,
-                    "Erro ao processar redução de estoque para OS {OrdemServicoId}. CorrelationId: {CorrelationId}",
-                    msg.OrdemServicoId,
-                    msg.CorrelationId);
+                    "Erro ao processar redução de estoque para OS {OrdemServicoId}",
+                    msg.OrdemServicoId);
 
             await publisher.PublicarFalhaAsync(logger, context, msg.CorrelationId, msg.OrdemServicoId, "erro_interno");
         }

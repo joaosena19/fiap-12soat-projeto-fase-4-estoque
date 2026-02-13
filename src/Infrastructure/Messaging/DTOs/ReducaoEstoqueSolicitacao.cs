@@ -9,7 +9,7 @@ public record ReducaoEstoqueSolicitacao
     /// <summary>
     /// ID de correlação para rastreamento distribuído da saga.
     /// </summary>
-    public Guid CorrelationId { get; init; }
+    public string CorrelationId { get; init; } = string.Empty;
 
     /// <summary>
     /// ID da ordem de serviço que solicitou a redução.

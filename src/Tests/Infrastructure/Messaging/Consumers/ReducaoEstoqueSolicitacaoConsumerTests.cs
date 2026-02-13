@@ -54,7 +54,7 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
     public async Task ConsumeReducaoEstoque_Deve_ReduzirQuantidadeEPublicarSucesso_Quando_EstoqueSuficiente()
     {
         // Arrange
-        var correlationId = Guid.NewGuid();
+        var correlationId = Guid.NewGuid().ToString();
         var ordemServicoId = Guid.NewGuid();
         
         var itemEstoque = ItemEstoqueTestBuilder.Novo()
@@ -92,7 +92,7 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
     public async Task ConsumeReducaoEstoque_Deve_PublicarFalhaComMotivo_Quando_EstoqueInsuficiente()
     {
         // Arrange
-        var correlationId = Guid.NewGuid();
+        var correlationId = Guid.NewGuid().ToString();
         var ordemServicoId = Guid.NewGuid();
         
         var itemEstoque = ItemEstoqueTestBuilder.Novo()
@@ -132,7 +132,7 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
     public async Task ConsumeReducaoEstoque_Deve_PublicarFalhaComMotivo_Quando_ItemNaoEncontrado()
     {
         // Arrange
-        var correlationId = Guid.NewGuid();
+        var correlationId = Guid.NewGuid().ToString();
         var ordemServicoId = Guid.NewGuid();
         var itemIdInexistente = Guid.NewGuid();
         
@@ -157,7 +157,7 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
     public async Task ConsumeReducaoEstoque_Deve_ProcessarTodosItensComSucesso_Quando_MultiplosItens()
     {
         // Arrange
-        var correlationId = Guid.NewGuid();
+        var correlationId = Guid.NewGuid().ToString();
         var ordemServicoId = Guid.NewGuid();
         
         var itemEstoque1 = ItemEstoqueTestBuilder.Novo()
@@ -206,7 +206,7 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
     public async Task ConsumeReducaoEstoque_NaoDeve_ReduzirQuantidade_Quando_MultiplosItensEUmInsuficiente()
     {
         // Arrange
-        var correlationId = Guid.NewGuid();
+        var correlationId = Guid.NewGuid().ToString();
         var ordemServicoId = Guid.NewGuid();
         
         var itemEstoque1 = ItemEstoqueTestBuilder.Novo()
@@ -257,7 +257,7 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
     public async Task ConsumeReducaoEstoque_Deve_PropagarCorrelationIdNoResultado()
     {
         // Arrange
-        var correlationId = Guid.NewGuid();
+        var correlationId = Guid.NewGuid().ToString();
         var ordemServicoId = Guid.NewGuid();
         
         var itemEstoque = ItemEstoqueTestBuilder.Novo()
