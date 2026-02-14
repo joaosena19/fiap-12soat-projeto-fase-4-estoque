@@ -32,5 +32,5 @@ public class Ator
     // Métodos de validação básicos
     public bool PodeGerenciarSistema() => Roles.Contains(RoleEnum.Administrador);
     public bool EhCliente() => Roles.Contains(RoleEnum.Cliente);
-    public bool PodeAcionarWebhooks() => Roles.Contains(RoleEnum.Sistema);
+    public bool PodeAcionarWebhooks() => Roles.Contains(RoleEnum.Sistema) || Roles.Contains(RoleEnum.Administrador);
 }
