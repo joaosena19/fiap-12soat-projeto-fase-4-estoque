@@ -46,6 +46,7 @@ public class ReducaoEstoqueSolicitacaoConsumerTests : IDisposable
     {
         _context.Database.EnsureDeleted();
         _context.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     [Fact(DisplayName = "Consumir redução de estoque deve reduzir quantidade e publicar sucesso quando estoque suficiente")]

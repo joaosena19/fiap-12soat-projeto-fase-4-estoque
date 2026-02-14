@@ -84,7 +84,7 @@ public class BaseControllerTests
 
     #region Helper Methods
 
-    private string CriarTokenJwtValido(Guid usuarioId, Guid? clienteId, string role)
+    private static string CriarTokenJwtValido(Guid usuarioId, Guid? clienteId, string role)
     {
         var claims = new List<Claim>
         {

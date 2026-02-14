@@ -104,7 +104,7 @@ public class CorrelationContextTests
     }
 
     [Fact(DisplayName = "Push deve ser thread-safe com AsyncLocal")]
-    public void Push_DeveSerThreadSafe_ComAsyncLocal()
+    public async Task Push_DeveSerThreadSafe_ComAsyncLocal()
     {
         // Arrange
         var id1 = "thread-1-id";
@@ -131,7 +131,7 @@ public class CorrelationContextTests
             }
         });
 
-        Task.WaitAll(task1, task2);
+        await Task.WhenAll(task1, task2);
 
         // Assert - cada task deve ter visto seu próprio correlation ID
         resultadoTask1.Should().Be(id1);

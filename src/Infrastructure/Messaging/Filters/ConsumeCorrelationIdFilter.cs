@@ -33,7 +33,7 @@ public class ConsumeCorrelationIdFilter<T> : IFilter<ConsumeContext<T>> where T 
         }
     }
 
-    private string ExtractCorrelationId(ConsumeContext<T> context)
+    private static string ExtractCorrelationId(ConsumeContext<T> context)
     {
         // 1. Tentar header X-Correlation-ID
         if (context.Headers.TryGetHeader(CorrelationConstants.HeaderName, out var headerValue) 

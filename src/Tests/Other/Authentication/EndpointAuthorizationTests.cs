@@ -32,7 +32,9 @@ namespace Tests.Other.Authentication
             var request = new HttpRequestMessage(new HttpMethod(method), url);
 
             // Para métodos como POST, PUT, PATCH, é comum precisar de um corpo na requisição, mesmo que vazio, para simular uma requisição válida.
-            if (method.ToUpper() == "POST" || method.ToUpper() == "PUT" || method.ToUpper() == "PATCH")
+            if (string.Equals(method, "POST", StringComparison.OrdinalIgnoreCase) || 
+                string.Equals(method, "PUT", StringComparison.OrdinalIgnoreCase) || 
+                string.Equals(method, "PATCH", StringComparison.OrdinalIgnoreCase))
                 request.Content = JsonContent.Create(new { });
 
             // Act

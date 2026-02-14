@@ -45,7 +45,7 @@ namespace API.Configurations
         private static bool IsIntegrationTest()
         {
             // Verifica o assembly
-            return AppDomain.CurrentDomain.GetAssemblies().Any(a => a.FullName?.ToUpper().Contains("TESTS") ?? false);
+            return AppDomain.CurrentDomain.GetAssemblies().Any(a => a.FullName?.Contains("TESTS", StringComparison.OrdinalIgnoreCase) ?? false);
         }
     }
 }

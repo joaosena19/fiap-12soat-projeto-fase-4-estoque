@@ -16,7 +16,7 @@ public class AtorJwtFactoryTests
     public void CriarAtor_DeveLancarUnauthorized_QuandoTokenInvalido()
     {
         // Arrange
-        var tokenInvalido = new JwtTokenBuilder().BuildTokenInvalido();
+        var tokenInvalido = JwtTokenBuilder.BuildTokenInvalido();
 
         // Act & Assert
         FluentActions.Invoking(() => AtorJwtFactory.CriarPorTokenJwt(tokenInvalido))

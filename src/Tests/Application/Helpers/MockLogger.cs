@@ -27,7 +27,7 @@ namespace Tests.Application.SharedHelpers
                 .Returns(Mock.Object);
         }
 
-        private void ConfigurarMockRecursivo(Mock<IAppLogger> mockToSetup)
+        private static void ConfigurarMockRecursivo(Mock<IAppLogger> mockToSetup)
         {
             // Configura os métodos de log no mock da cadeia
             mockToSetup.Setup(x => x.LogInformation(It.IsAny<string>(), It.IsAny<object[]>()));

@@ -36,10 +36,7 @@ public class CorrelationIdMiddleware
         }
         
         // Normalizar request header para conter exatamente um valor
-        if (context.Request.Headers.ContainsKey(CorrelationConstants.HeaderName))
-        {
-            context.Request.Headers.Remove(CorrelationConstants.HeaderName);
-        }
+        context.Request.Headers.Remove(CorrelationConstants.HeaderName);
         context.Request.Headers.Append(CorrelationConstants.HeaderName, correlationId);
         
         // Definir response header usando OnStarting para evitar duplicatas

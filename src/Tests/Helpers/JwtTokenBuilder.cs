@@ -79,7 +79,7 @@ namespace Tests.Helpers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public string BuildTokenInvalido() => "token-invalido-sem-formato-jwt";
+        public static string BuildTokenInvalido() => "token-invalido-sem-formato-jwt";
 
         public string BuildTokenSemAssinatura()
         {

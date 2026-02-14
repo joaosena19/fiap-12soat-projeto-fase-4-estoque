@@ -25,6 +25,7 @@ public class SeedDataTests : IDisposable
     {
         _context.Database.EnsureDeleted();
         _context.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     [Fact(DisplayName = "SeedItensEstoque deve popular banco vazio com 13 itens")]
