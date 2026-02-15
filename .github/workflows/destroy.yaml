@@ -1,4 +1,4 @@
-name: Destruir Aplicação do EKS
+name: Destruir Estoque do EKS
 
 on:
   workflow_dispatch:
@@ -9,10 +9,15 @@ on:
 
 env:
   AWS_REGION: us-east-1
+  SERVICE_NAME: estoque
+  K8S_DEPLOYMENT_NAME: estoque-service
+  K8S_SERVICE_NAME: estoque-service
+  K8S_SECRET_NAME: estoque-secret
+  K8S_CONFIG_NAME: estoque-config
 
 jobs:
   destroy:
-    name: Remover Aplicação do EKS
+    name: Remover Estoque do EKS
     runs-on: ubuntu-latest
     
     steps:
@@ -35,50 +40,59 @@ jobs:
 
       - name: Configurar acesso ao cluster EKS
         run: |
-          echo "Configurando kubeconfig para o cluster: ${{ secrets.TF_VAR_EKS_CLUSTER_NAME }}"
           aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ secrets.TF_VAR_EKS_CLUSTER_NAME }}
           kubectl cluster-info
 
       - name: Listar recursos antes da remoção
         run: |
-          echo "Deployments:"
-          kubectl get deployments
-          echo "Services:"
-          kubectl get services
-          echo "ConfigMaps:"
-          kubectl get configmaps
-          echo "Secrets:"
-          kubectl get secrets
+          echo "=== Deployments ===" && kubectl get deployments
+          echo "=== Services ===" && kubectl get services
+          echo "=== ConfigMaps ===" && kubectl get configmaps
+          echo "=== Secrets ===" && kubectl get secrets
+          echo "=== HPAs ===" && kubectl get hpa
 
-      - name: Remover deployment da API
-        run: kubectl delete -f k8s/api/ --ignore-not-found=true
+      - name: Remover HPA
+        run: kubectl delete -f k8s/${{ env.SERVICE_NAME }}-hpa.yaml --ignore-not-found=true
+        continue-on-error: true
+
+      - name: Remover Deployment
+        run: kubectl delete -f k8s/${{ env.SERVICE_NAME }}-deployment.yaml --ignore-not-found=true
+        continue-on-error: true
+
+      - name: Remover Service
+        run: kubectl delete -f k8s/${{ env.SERVICE_NAME }}-service.yaml --ignore-not-found=true
+        continue-on-error: true
+
+      - name: Remover ConfigMap e Secret
+        run: |
+          kubectl delete configmap ${{ env.K8S_CONFIG_NAME }} --ignore-not-found=true
+          kubectl delete secret ${{ env.K8S_SECRET_NAME }} --ignore-not-found=true
         continue-on-error: true
 
       - name: Remover metrics server
         run: kubectl delete -f k8s/metrics-server.yaml --ignore-not-found=true
         continue-on-error: true
 
-      - name: Aguardar finalização da remoção
+      - name: Aguardar finalização
         run: |
           echo "Aguardando finalização da remoção dos pods..."
           sleep 30
-          echo "Pods restantes:"
           kubectl get pods
 
       - name: Verificar recursos restantes
         run: |
           echo "Verificando se todos os recursos foram removidos..."
-          if kubectl get deployment oficina-mecanica-deployment 2>/dev/null; then
+          if kubectl get deployment ${{ env.K8S_DEPLOYMENT_NAME }} 2>/dev/null; then
             echo "⚠️ Deployment ainda existe"
           else
             echo "✅ Deployment removido com sucesso"
           fi
           
-          if kubectl get service oficina-mecanica-service 2>/dev/null; then
+          if kubectl get service ${{ env.K8S_SERVICE_NAME }} 2>/dev/null; then
             echo "⚠️ Service ainda existe"
           else
             echo "✅ Service removido com sucesso"
           fi
 
       - name: Destruição completa
-        run: echo "Aplicação removida do EKS com sucesso"
+        run: echo "✅ Estoque removido do EKS com sucesso"
