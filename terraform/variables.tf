@@ -92,7 +92,7 @@ variable "max_allocated_storage" {
 variable "terraform_state_bucket" {
   description = "Nome do bucket S3 onde está o state da infraestrutura"
   type        = string
-  default     = "fiap-12soat-fase3-joao-dainese"
+  default     = "fiap-12soat-fase4-joao-dainese"
 }
 
 variable "infra_terraform_state_key" {

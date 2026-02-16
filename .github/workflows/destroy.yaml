@@ -1,10 +1,10 @@
-name: Destruir Estoque do EKS
+name: Destruir Estoque (K8s + Banco)
 
 on:
   workflow_dispatch:
     inputs:
       confirm:
-        description: 'Digite "destroy" para confirmar a remoção da aplicação do EKS'
+        description: 'Digite "destroy" para confirmar a remoção completa (K8s + RDS)'
         required: true
 
 env:
@@ -16,8 +16,8 @@ env:
   K8S_CONFIG_NAME: estoque-config
 
 jobs:
-  destroy:
-    name: Remover Estoque do EKS
+  destroy-kubernetes:
+    name: 1. Remover Estoque do EKS
     runs-on: ubuntu-latest
     
     steps:
@@ -94,5 +94,40 @@ jobs:
             echo "✅ Service removido com sucesso"
           fi
 
+  destroy-database:
+    name: 2. Destruir Banco de Dados (RDS PostgreSQL)
+    runs-on: ubuntu-latest
+    needs: destroy-kubernetes
+    
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Configurar Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Inicializar Terraform
+        working-directory: ./terraform
+        run: terraform init
+
+      - name: Listar recursos do Terraform
+        working-directory: ./terraform
+        run: terraform state list
+
+      - name: Destruir Banco de Dados
+        working-directory: ./terraform
+        env:
+          TF_VAR_db_master_password: ${{ secrets.DB_MASTER_PASSWORD }}
+        run: terraform destroy -auto-approve
+
       - name: Destruição completa
-        run: echo "✅ Estoque removido do EKS com sucesso"
+        run: echo "✅ Estoque removido completamente (K8s + RDS PostgreSQL)"
