@@ -1,0 +1,245 @@
+name: Deploy Estoque no EKS
+
+on:
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  SERVICE_NAME: estoque
+  DOCKER_IMAGE_NAME: estoque-service
+  K8S_DEPLOYMENT_NAME: estoque-service
+  K8S_SERVICE_NAME: estoque-service
+  K8S_SECRET_NAME: estoque-secret
+  K8S_CONFIG_NAME: estoque-config
+  DB_STATE_KEY: fase4/estoque-database/terraform.tfstate
+
+jobs:
+  build-and-test:
+    name: 1. Build e Teste
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar .NET 9.0
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+          
+      - name: Encontrar arquivo da Solution (.sln)
+        id: find_sln
+        run: echo "sln_path=$(find . -name '*.sln' -print -quit)" >> $GITHUB_OUTPUT
+        
+      - name: Restaurar dependências
+        run: dotnet restore ${{ steps.find_sln.outputs.sln_path }}
+
+      - name: Buildar a aplicação (Release)
+        run: dotnet build ${{ steps.find_sln.outputs.sln_path }} --no-restore --configuration Release
+
+      - name: Rodar testes unitários (Release)
+        run: dotnet test ${{ steps.find_sln.outputs.sln_path }} --no-build --configuration Release --verbosity normal
+        env:
+          DatabaseConnection__Host: "localhost"
+          DatabaseConnection__Port: "5432"
+          DatabaseConnection__DatabaseName: "db_test"
+          DatabaseConnection__User: "test_user"
+          DatabaseConnection__Password: "test_password"
+          Jwt__Key: "dummy-super-secret-key-for-testing-purposes-only"
+          Jwt__Issuer: "OficinaMecanicaApi"
+          Jwt__Audience: "AuthorizedServices"
+          ApiCredentials__ClientId: "test-client"
+          ApiCredentials__ClientSecret: "test-secret"
+          Webhook__HmacSecret: "test-hmac-secret"
+
+  publish-docker-image:
+    name: 2a. Publicar Imagem Docker
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    outputs:
+      version_tag: ${{ steps.version.outputs.VERSION }}
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Gerar tag de versão
+        id: version
+        run: |
+          echo "VERSION=v$(date +%Y%m%d-%H%M%S)-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+
+      - name: Login no Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Buildar e enviar imagem Docker
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src
+          file: ./src/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}
+
+  provision-database:
+    name: 2b. Provisionar Banco de Dados
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verificar conectividade com AWS
+        run: |
+          aws sts get-caller-identity
+          echo "✅ Conectividade com AWS verificada"
+
+      - name: Configurar Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Inicializar Terraform
+        working-directory: ./terraform
+        run: terraform init
+
+      - name: Validar Terraform
+        working-directory: ./terraform
+        run: terraform validate
+
+      - name: Planejar Terraform
+        working-directory: ./terraform
+        env:
+          TF_VAR_db_master_password: ${{ secrets.DB_MASTER_PASSWORD }}
+        run: terraform plan -out=tfplan
+
+      - name: Aplicar Terraform
+        working-directory: ./terraform
+        env:
+          TF_VAR_db_master_password: ${{ secrets.DB_MASTER_PASSWORD }}
+        run: terraform apply -auto-approve tfplan
+
+  deploy-to-kubernetes:
+    name: 3. Deploy no Kubernetes (EKS)
+    runs-on: ubuntu-latest
+    needs: [publish-docker-image, provision-database]
+    if: ${{ needs.publish-docker-image.result == 'success' && needs.provision-database.result == 'success' }}
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+        
+      - name: Configurar credenciais AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Verificar conectividade com AWS
+        run: |
+          aws sts get-caller-identity
+          echo "✅ Conectividade com AWS verificada"
+
+      - name: Instalar dependências
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Buscar dados do PostgreSQL via Terraform State
+        run: |
+          STATE_DATA=$(aws s3 cp s3://${{ secrets.TF_VAR_BUCKET_NAME }}/${{ env.DB_STATE_KEY }} -)
+          DB_HOST_VALUE=$(echo "$STATE_DATA" | jq -r '.outputs.db_instance_address.value')
+          DB_PORT_VALUE=$(echo "$STATE_DATA" | jq -r '.outputs.db_instance_port.value // "5432"')
+          DB_NAME_VALUE=$(echo "$STATE_DATA" | jq -r '.outputs.db_name.value')
+          DB_USERNAME_VALUE=$(echo "$STATE_DATA" | jq -r '.outputs.db_username.value')
+          
+          if [ "$DB_HOST_VALUE" = "null" ] || [ -z "$DB_HOST_VALUE" ]; then
+            echo "❌ Erro: Não foi possível obter dados do banco do Terraform state"
+            exit 1
+          fi
+          
+          echo "✅ Dados do PostgreSQL obtidos: Host=$DB_HOST_VALUE, DB=$DB_NAME_VALUE"
+          echo "DB_HOST_VALUE=$DB_HOST_VALUE" >> $GITHUB_ENV
+          echo "DB_PORT_VALUE=$DB_PORT_VALUE" >> $GITHUB_ENV
+          echo "DB_NAME_VALUE=$DB_NAME_VALUE" >> $GITHUB_ENV
+          echo "DB_USERNAME_VALUE=$DB_USERNAME_VALUE" >> $GITHUB_ENV
+
+      - name: Buscar URLs das filas SQS via Terraform State (Infra)
+        run: |
+          INFRA_STATE=$(aws s3 cp s3://${{ secrets.TF_VAR_BUCKET_NAME }}/infra/terraform.tfstate -)
+          SQS_SOLICITACAO_URL=$(echo "$INFRA_STATE" | jq -r '.outputs.sqs_estoque_reducao_solicitacao_url.value // empty')
+          SQS_RESULTADO_URL=$(echo "$INFRA_STATE" | jq -r '.outputs.sqs_estoque_reducao_resultado_url.value // empty')
+          echo "SQS_SOLICITACAO_URL=$SQS_SOLICITACAO_URL" >> $GITHUB_ENV
+          echo "SQS_RESULTADO_URL=$SQS_RESULTADO_URL" >> $GITHUB_ENV
+
+      - name: Configurar acesso ao cluster EKS
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ secrets.TF_VAR_EKS_CLUSTER_NAME }}
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Atualizar Secret do Kubernetes
+        run: |
+          kubectl create secret generic ${{ env.K8S_SECRET_NAME }} \
+            --from-literal=DatabaseConnection__Password=${{ secrets.DB_MASTER_PASSWORD }} \
+            --from-literal=Jwt__Key=${{ secrets.JWT_KEY }} \
+            --from-literal=ApiCredentials__ClientSecret=${{ secrets.API_CLIENT_SECRET }} \
+            --from-literal=Webhook__HmacSecret=${{ secrets.WEBHOOK_HMAC_SECRET }} \
+            --from-literal=NEW_RELIC_LICENSE_KEY=${{ secrets.NEW_RELIC_LICENSE_KEY }} \
+            --from-literal=AWS__AccessKeyId=${{ secrets.AWS_ACCESS_KEY_ID }} \
+            --from-literal=AWS__SecretAccessKey=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Atualizar ConfigMap do Kubernetes
+        run: |
+          kubectl create configmap ${{ env.K8S_CONFIG_NAME }} \
+            --from-literal=DatabaseConnection__Host="$DB_HOST_VALUE" \
+            --from-literal=DatabaseConnection__Port="$DB_PORT_VALUE" \
+            --from-literal=DatabaseConnection__DatabaseName="$DB_NAME_VALUE" \
+            --from-literal=DatabaseConnection__User="$DB_USERNAME_VALUE" \
+            --from-literal=ASPNETCORE_ENVIRONMENT=Production \
+            --from-literal=ASPNETCORE_URLS=http://+:8080 \
+            --from-literal=Jwt__Issuer=${{ secrets.JWT_ISSUER }} \
+            --from-literal=Jwt__Audience=${{ secrets.JWT_AUDIENCE }} \
+            --from-literal=ApiCredentials__ClientId=${{ secrets.API_CLIENT_ID }} \
+            --from-literal=AWS__Region=${{ env.AWS_REGION }} \
+            --from-literal=AWS__SQS__EstoqueReducaoSolicitacaoQueueUrl="$SQS_SOLICITACAO_URL" \
+            --from-literal=AWS__SQS__EstoqueReducaoResultadoQueueUrl="$SQS_RESULTADO_URL" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Atualizar tag da imagem no manifesto k8s
+        run: |
+          sed -i "s|image:.*|image: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ needs.publish-docker-image.outputs.version_tag }}|g" k8s/${{ env.SERVICE_NAME }}-deployment.yaml
+
+      - name: Aplicar metrics server
+        run: kubectl apply -f k8s/metrics-server.yaml
+        continue-on-error: true
+
+      - name: Aplicar manifestos K8s
+        run: |
+          kubectl apply -f k8s/${{ env.SERVICE_NAME }}-config.yaml
+          kubectl apply -f k8s/${{ env.SERVICE_NAME }}-secret.yaml
+          kubectl apply -f k8s/${{ env.SERVICE_NAME }}-deployment.yaml
+          kubectl apply -f k8s/${{ env.SERVICE_NAME }}-service.yaml
+          kubectl apply -f k8s/${{ env.SERVICE_NAME }}-hpa.yaml
+
+      - name: Aguardar e verificar pods
+        run: |
+          echo "Aguardando pods serem criados..."
+          sleep 30
+          kubectl get pods -o wide
+          kubectl get events --sort-by=.metadata.creationTimestamp | tail -20
+        
+      - name: Verificar status do deploy
+        run: kubectl rollout status deployment/${{ env.K8S_DEPLOYMENT_NAME }} --timeout=300s
+
+      - name: Exibir informações do serviço
+        run: |
+          kubectl get service ${{ env.K8S_SERVICE_NAME }}
+          kubectl get endpoints ${{ env.K8S_SERVICE_NAME }}

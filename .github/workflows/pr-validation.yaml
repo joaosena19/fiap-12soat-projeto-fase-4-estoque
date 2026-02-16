@@ -5,23 +5,131 @@ on:
     branches: [ "main" ]
 
 jobs:
-  test-sonarqube:
+  build-test-sonar:
+    name: Build, Test, Cobertura e SonarCloud
     runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: read
     
     steps:
       - name: Checkout do código
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Necessário para SonarCloud
 
-      - name: Análise SonarQube
-        uses: SonarSource/sonarqube-scan-action@v5
+      - name: Configurar .NET 9.0
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Configurar Java 17 (SonarScanner)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Instalar SonarScanner
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Encontrar arquivo da Solution (.sln)
+        id: find_sln
+        run: echo "sln_path=$(find . -name '*.sln' -print -quit)" >> $GITHUB_OUTPUT
+
+      - name: SonarCloud - Iniciar Análise
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet sonarscanner begin \
+            /k:"joaosena19_fiap-12soat-projeto-fase-4-estoque" \
+            /o:"joaosena19" \
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml"
+
+      - name: Restaurar dependências
+        run: dotnet restore ${{ steps.find_sln.outputs.sln_path }}
+
+      - name: Build (Release)
+        run: dotnet build ${{ steps.find_sln.outputs.sln_path }} --no-restore --configuration Release
+
+      - name: Testes com Cobertura
+        run: |
+          dotnet test ${{ steps.find_sln.outputs.sln_path }} \
+            --no-build --configuration Release --verbosity normal \
+            --logger "trx;LogFileName=test-results.trx" \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults \
+            --settings src/Tests/coverlet.runsettings \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+        continue-on-error: true
+        env:
+          DatabaseConnection__Host: "localhost"
+          DatabaseConnection__Port: "5432"
+          DatabaseConnection__DatabaseName: "db_test"
+          DatabaseConnection__User: "test_user"
+          DatabaseConnection__Password: "test_password"
+          Jwt__Key: "dummy-super-secret-key-for-testing-purposes-only"
+          Jwt__Issuer: "OficinaMecanicaApi"
+          Jwt__Audience: "AuthorizedServices"
+          ApiCredentials__ClientId: "test-client"
+          ApiCredentials__ClientSecret: "test-secret"
+          Webhook__HmacSecret: "test-hmac-secret"
+
+      - name: SonarCloud - Finalizar Análise
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
+      - name: Publicar Relatório de Testes
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: test-report
+          path: "**/test-results.trx"
+          reporter: dotnet-trx
+          fail-on-error: true
+
+      - name: Validar Cobertura Mínima (80%)
+        run: |
+          echo "Buscando relatórios de cobertura..."
+          COVERAGE_FILE=$(find ./TestResults -name "coverage.opencover.xml" -print -quit)
+          if [ -z "$COVERAGE_FILE" ]; then
+            echo "❌ Nenhum relatório de cobertura encontrado"
+            exit 1
+          fi
+          
+          LINE_RATE=$(grep -oP 'sequenceCoverage="\K[^"]+' "$COVERAGE_FILE" | head -1)
+          if [ -z "$LINE_RATE" ]; then
+            LINE_RATE=$(python3 -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('$COVERAGE_FILE')
+          root = tree.getroot()
+          sc = root.attrib.get('sequenceCoverage', '0')
+          print(sc)
+          ")
+          fi
+          
+          echo "Cobertura de código: ${LINE_RATE}%"
+          
+          PASS=$(python3 -c "print('true' if float('${LINE_RATE}') >= 80.0 else 'false')")
+          if [ "$PASS" = "false" ]; then
+            echo "❌ Cobertura abaixo do mínimo: ${LINE_RATE}% (mínimo: 80%)"
+            exit 1
+          else
+            echo "✅ Cobertura aprovada: ${LINE_RATE}% (mínimo: 80%)"
+          fi
 
   ci-gate:
-    needs: [test-sonarqube]
+    name: CI Gate
     runs-on: ubuntu-latest
+    needs: [build-test-sonar]
+    if: always()
     steps:
-      - name: CI Gate
-        run: echo "CI bem sucedida"
+      - name: Verificar resultados
+        run: |
+          if [ "${{ needs.build-test-sonar.result }}" != "success" ]; then
+            echo "❌ CI Gate falhou: build-test-sonar=${{ needs.build-test-sonar.result }}"
+            exit 1
+          fi
+          echo "✅ CI Gate aprovado"
