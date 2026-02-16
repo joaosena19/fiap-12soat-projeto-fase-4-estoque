@@ -1,4 +1,4 @@
-# Data source para obter informações da VPC e subnets do terraform da infraestrutura
+# Data source para obter informacoes da VPC e subnets do terraform da infraestrutura
 data "terraform_remote_state" "infra" {
   backend = "s3"
   config = {

@@ -1,7 +1,7 @@
-# Security Group para o RDS PostgreSQL do serviço de Estoque
+# Security Group para o RDS PostgreSQL do servico de Estoque
 resource "aws_security_group" "estoque_db_sg" {
   name        = "${var.db_identifier}-sg"
-  description = "Security group para RDS PostgreSQL Instance do serviço de Estoque"
+  description = "Security group para RDS PostgreSQL Instance do servico de Estoque"
   vpc_id      = data.terraform_remote_state.infra.outputs.vpc_principal_id
 
   ingress {
@@ -13,7 +13,7 @@ resource "aws_security_group" "estoque_db_sg" {
   }
 
   ingress {
-    description = "Acesso PostgreSQL das subnets públicas (pods EKS)"
+    description = "Acesso PostgreSQL das subnets publicas (pods EKS)"
     from_port   = var.db_port
     to_port     = var.db_port
     protocol    = "tcp"
@@ -33,7 +33,7 @@ resource "aws_security_group" "estoque_db_sg" {
   }
 }
 
-# DB Subnet Group usando as subnets públicas da infraestrutura
+# DB Subnet Group usando as subnets publicas da infraestrutura
 resource "aws_db_subnet_group" "estoque_subnet_group" {
   name       = "${var.db_identifier}-subnet-group"
   subnet_ids = data.terraform_remote_state.infra.outputs.subnet_publica_ids
@@ -43,7 +43,7 @@ resource "aws_db_subnet_group" "estoque_subnet_group" {
   }
 }
 
-# Instância RDS PostgreSQL dedicada para o microsserviço de Estoque
+# Instancia RDS PostgreSQL dedicada para o microsservico de Estoque
 resource "aws_db_instance" "estoque_postgres" {
   identifier     = var.db_identifier
   engine         = "postgres"
@@ -70,13 +70,13 @@ resource "aws_db_instance" "estoque_postgres" {
   skip_final_snapshot       = var.skip_final_snapshot
   final_snapshot_identifier = var.skip_final_snapshot ? null : "${var.db_identifier}-final-snapshot"
 
-  # RDS deve ser acessível pelos pods do EKS na mesma VPC
+  # RDS deve ser acessivel pelos pods do EKS na mesma VPC
   publicly_accessible = false
   
   # Enable automated backups
   copy_tags_to_snapshot = true
   
-  # Performance Insights (desabilitado para custo reduzido em ambiente acadêmico)
+  # Performance Insights (desabilitado para custo reduzido em ambiente academico)
   performance_insights_enabled = false
   
   tags = {
