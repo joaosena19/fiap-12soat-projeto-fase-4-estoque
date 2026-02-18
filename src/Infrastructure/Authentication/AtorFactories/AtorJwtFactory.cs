@@ -30,17 +30,15 @@ namespace Infrastructure.Authentication.AtorFactories
 
             // Extrair Roles
             var rolesClaims = jwt.Claims.Where(x => x.Type == "role" || x.Type == ClaimTypes.Role).ToList();
-            if (!rolesClaims.Any())
+            if (rolesClaims.Count == 0)
                 throw new DomainException("Token deve conter pelo menos uma role", ErrorType.Unauthorized);
 
-            var roles = new List<RoleEnum>();
-            foreach (var roleClaim in rolesClaims)
+            var roles = rolesClaims.Select(roleClaim =>
             {
                 if (Enum.TryParse<RoleEnum>(roleClaim.Value, true, out var role))
-                    roles.Add(role);
-                else
-                    throw new DomainException($"Role '{roleClaim.Value}' não é válida. Roles permitidas: {string.Join(", ", Enum.GetNames<RoleEnum>())}", ErrorType.Unauthorized);
-            }
+                    return role;
+                throw new DomainException($"Role '{roleClaim.Value}' não é válida. Roles permitidas: {string.Join(", ", Enum.GetNames<RoleEnum>())}", ErrorType.Unauthorized);
+            }).ToList();
 
             return Ator.ComRoles(usuarioId, clienteId, roles);
         }

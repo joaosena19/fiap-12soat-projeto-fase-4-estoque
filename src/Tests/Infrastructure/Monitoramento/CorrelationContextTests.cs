@@ -113,20 +113,20 @@ public class CorrelationContextTests
         var resultadoTask2 = "";
 
         // Act
-        var task1 = Task.Run(() =>
+        var task1 = Task.Run(async () =>
         {
             using (CorrelationContext.Push(id1))
             {
-                Thread.Sleep(50); // Simula algum trabalho
+                await Task.Delay(50);
                 resultadoTask1 = CorrelationContext.Current ?? "";
             }
         });
 
-        var task2 = Task.Run(() =>
+        var task2 = Task.Run(async () =>
         {
             using (CorrelationContext.Push(id2))
             {
-                Thread.Sleep(50); // Simula algum trabalho
+                await Task.Delay(50);
                 resultadoTask2 = CorrelationContext.Current ?? "";
             }
         });
