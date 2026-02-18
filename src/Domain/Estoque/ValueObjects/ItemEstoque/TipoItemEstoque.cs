@@ -15,9 +15,9 @@ namespace Domain.Estoque.ValueObjects.ItemEstoque
 
         public TipoItemEstoque(TipoItemEstoqueEnum tipoItemEstoqueEnum)
         {
-            if (!Enum.IsDefined(typeof(TipoItemEstoqueEnum), tipoItemEstoqueEnum))
+            if (!Enum.IsDefined(tipoItemEstoqueEnum))
             {
-                var valores = string.Join(", ", Enum.GetNames(typeof(TipoItemEstoqueEnum)));
+                var valores = string.Join(", ", Enum.GetNames<TipoItemEstoqueEnum>());
                 throw new DomainException($"Tipo de item de estoque '{tipoItemEstoqueEnum}' não é válido. Valores aceitos: {valores}.", ErrorType.InvalidInput);
             }
 

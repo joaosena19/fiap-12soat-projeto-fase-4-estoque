@@ -35,7 +35,7 @@ public class ReducaoEstoqueSolicitacaoConsumer : BaseConsumer, IConsumer<Reducao
         await ProcessarMensagemAsync(gateway, publisher, logger, context, msg);
     }
 
-    private static async Task ProcessarMensagemAsync(ItemEstoqueRepository gateway, IReducaoEstoqueResultadoPublisher publisher, IAppLogger logger, ConsumeContext<ReducaoEstoqueSolicitacao> context, ReducaoEstoqueSolicitacao msg)
+    private static async Task ProcessarMensagemAsync(ItemEstoqueRepository gateway, ReducaoEstoqueResultadoPublisher publisher, IAppLogger logger, ConsumeContext<ReducaoEstoqueSolicitacao> context, ReducaoEstoqueSolicitacao msg)
     {
         logger
             .ComMensageria(NomeMensagemEnum.ReducaoEstoqueSolicitacao, TipoMensagemEnum.Consumo)

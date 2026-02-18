@@ -48,7 +48,7 @@ public class BaseControllerTests
     {
         // Arrange
         var httpContext = new DefaultHttpContext();
-        httpContext.Request.Headers["Authorization"] = "Basic abc123";
+        httpContext.Request.Headers.Authorization = "Basic abc123";
         _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
 
         // Act & Assert
@@ -67,7 +67,7 @@ public class BaseControllerTests
         var token = CriarTokenJwtValido(usuarioId, clienteId, "Administrador");
 
         var httpContext = new DefaultHttpContext();
-        httpContext.Request.Headers["Authorization"] = $"Bearer {token}";
+        httpContext.Request.Headers.Authorization = $"Bearer {token}";
         _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
 
         // Act
