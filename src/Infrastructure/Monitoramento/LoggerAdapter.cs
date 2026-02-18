@@ -6,6 +6,7 @@ namespace Infrastructure.Monitoramento;
 
 public class LoggerAdapter<T> : IAppLogger
 {
+    private const string MessageTemplateProperty = "message_template";
     private readonly ILogger<T> _logger;
 
     public LoggerAdapter(ILogger<T> logger)
@@ -15,7 +16,7 @@ public class LoggerAdapter<T> : IAppLogger
 
     public void LogInformation(string messageTemplate, params object[] args)
     {
-        using (LogContext.PushProperty("message_template", messageTemplate))
+        using (LogContext.PushProperty(MessageTemplateProperty, messageTemplate))
         {
             _logger.LogInformation(messageTemplate, args);
         }
@@ -23,7 +24,7 @@ public class LoggerAdapter<T> : IAppLogger
 
     public void LogWarning(string messageTemplate, params object[] args)
     {
-        using (LogContext.PushProperty("message_template", messageTemplate))
+        using (LogContext.PushProperty(MessageTemplateProperty, messageTemplate))
         {
             _logger.LogWarning(messageTemplate, args);
         }
@@ -31,7 +32,7 @@ public class LoggerAdapter<T> : IAppLogger
 
     public void LogError(string messageTemplate, params object[] args)
     {
-        using (LogContext.PushProperty("message_template", messageTemplate))
+        using (LogContext.PushProperty(MessageTemplateProperty, messageTemplate))
         {
             _logger.LogError(messageTemplate, args);
         }
@@ -39,7 +40,7 @@ public class LoggerAdapter<T> : IAppLogger
 
     public void LogError(Exception ex, string messageTemplate, params object[] args)
     {
-        using (LogContext.PushProperty("message_template", messageTemplate))
+        using (LogContext.PushProperty(MessageTemplateProperty, messageTemplate))
         {
             _logger.LogError(ex, messageTemplate, args);
         }

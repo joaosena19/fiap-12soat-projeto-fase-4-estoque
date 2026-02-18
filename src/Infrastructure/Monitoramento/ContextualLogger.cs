@@ -6,6 +6,7 @@ namespace Infrastructure.Monitoramento;
 
 public class ContextualLogger : IAppLogger
 {
+    private const string MessageTemplateProperty = "message_template";
     private readonly ILogger _logger;
     private readonly Dictionary<string, object?> _context;
 
@@ -20,7 +21,7 @@ public class ContextualLogger : IAppLogger
         var disposables = new List<IDisposable>();
         
         // Adiciona o template da mensagem como propriedade
-        disposables.Add(LogContext.PushProperty("message_template", messageTemplate));
+        disposables.Add(LogContext.PushProperty(MessageTemplateProperty, messageTemplate));
 
         foreach (var kvp in _context)
         {

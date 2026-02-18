@@ -20,7 +20,7 @@ public abstract class BaseController : ControllerBase
     /// <returns>Ator atual autenticado</returns>
     protected Ator BuscarAtorAtual()
     {
-        var authHeader = Request.Headers["Authorization"].ToString();
+        var authHeader = Request.Headers.Authorization.ToString();
         if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
             throw new UnauthorizedAccessException("Token de autorização é obrigatório");
 
